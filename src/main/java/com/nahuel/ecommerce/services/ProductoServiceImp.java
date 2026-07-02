@@ -10,7 +10,7 @@ import java.time.Instant;
 
 @RequiredArgsConstructor
 @Service
-public class ProductoServiceImp {
+public class ProductoServiceImp implements ProductoService {
 
     private final ProductoRepository productoRepository;
 
