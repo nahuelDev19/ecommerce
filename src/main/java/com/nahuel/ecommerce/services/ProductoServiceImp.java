@@ -79,7 +79,7 @@ public class ProductoServiceImp implements ProductoService {
 
     @Override
     public List<ProductoDto> listarActivos() {
-        return List.of();
+        return productoRepository.findAllActivos().stream().map(this::convertirProductoDTO).toList();
     }
 
     @Override
@@ -87,5 +87,16 @@ public class ProductoServiceImp implements ProductoService {
         return List.of();
     }
 
+    private ProductoDto convertirProductoDTO(Producto producto){
+        return new ProductoDto(
+                producto.getId(),
+                producto.getNombre(),
+                producto.getDescripcion(),
+                producto.getPrecioBase(),
+                producto.getMoneda(),
+                producto.getActivo(),
+                producto.getFechaDescontinuado()
+        );
+    }
 
 }

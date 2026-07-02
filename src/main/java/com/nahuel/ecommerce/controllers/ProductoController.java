@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -28,4 +29,8 @@ public class ProductoController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/desactivos")
+    public ResponseEntity<List<ProductoDto>> eliminar() {
+        return ResponseEntity.ok(productoService.listarActivos());
+    }
 }
