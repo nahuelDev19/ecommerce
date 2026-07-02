@@ -1,6 +1,6 @@
 package com.nahuel.ecommerce.controllers;
 
-import com.nahuel.ecommerce.services.ProductoService;
+import com.nahuel.ecommerce.services.ProductoServiceImp;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/productos")
 public class ProductoController {
 
-    private final ProductoService productoService;
+    private final ProductoServiceImp productoService;
 
 
 }
