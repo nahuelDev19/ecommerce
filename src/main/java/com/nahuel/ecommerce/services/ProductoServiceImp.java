@@ -65,8 +65,11 @@ public class ProductoServiceImp implements ProductoService {
     }
 
     @Override
-    public ProductoDto descontinuarProducto(UUID id, Instant fechaDescontinuado) {
-        return null;
+    public void descontinuarProducto(UUID id) {
+        Producto productodescontinuado= productoRepository.findById(id).orElseThrow(()-> new RuntimeException("producto no encontrado"));
+        productodescontinuado.setFechaDescontinuado(Instant.now());
+        productodescontinuado.setActivo(false);
+        productoRepository.save(productodescontinuado);
     }
 
     @Override

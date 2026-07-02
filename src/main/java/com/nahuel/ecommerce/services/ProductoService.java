@@ -26,7 +26,7 @@ public interface ProductoService {
                                       Boolean activo);
 
     // Eliminación lógica: descontinuar (fechaDescontinuado)
-    ProductoDto descontinuarProducto(UUID id, Instant fechaDescontinuado);
+    void descontinuarProducto(UUID id);
 
     // Listados
     List<ProductoDto> listarTodos();
