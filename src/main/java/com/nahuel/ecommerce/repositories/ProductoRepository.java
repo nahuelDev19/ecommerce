@@ -16,7 +16,7 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID> {
 
 
     @Query("select p from Producto p where p.activo=false")
-    List<Producto> findAllActivos();
+    List<Producto> findAllDesactivos();
 
     @Query("""
     SELECT p

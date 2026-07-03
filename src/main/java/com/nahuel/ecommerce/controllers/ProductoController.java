@@ -33,7 +33,7 @@ public class ProductoController {
     }
 
     @GetMapping("/desactivos")
-    public ResponseEntity<List<ProductoDto>> eliminar() {
+    public ResponseEntity<List<ProductoDto>> listarDesactivos() {
         return ResponseEntity.ok(productoService.listarActivos());
     }
 

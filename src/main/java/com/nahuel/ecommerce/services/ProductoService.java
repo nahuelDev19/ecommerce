@@ -28,6 +28,6 @@ public interface ProductoService {
 
     // Listados
     List<ProductoDto> listarTodos();
-    List<ProductoDto> listarActivos();
+    List<ProductoDto> listarDesactivos();
     List<ProductoDto> listarDescontinuados();
 }
