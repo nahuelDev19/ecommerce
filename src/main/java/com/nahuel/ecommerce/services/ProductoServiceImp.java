@@ -98,7 +98,7 @@ public class ProductoServiceImp implements ProductoService {
 
     @Override
     public List<ProductoDto> listarDesactivos() {
-        return productoRepository.findAllActivos().stream().map(this::convertirProductoDTO).toList();
+        return productoRepository.findAllDesactivos().stream().map(this::convertirProductoDTO).toList();
     }
 
     @Override

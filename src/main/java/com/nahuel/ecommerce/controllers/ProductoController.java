@@ -34,7 +34,7 @@ public class ProductoController {
 
     @GetMapping("/desactivos")
     public ResponseEntity<List<ProductoDto>> listarDesactivos() {
-        return ResponseEntity.ok(productoService.listarActivos());
+        return ResponseEntity.ok(productoService.listarDesactivos());
     }
 
     @GetMapping("/filtrados")
