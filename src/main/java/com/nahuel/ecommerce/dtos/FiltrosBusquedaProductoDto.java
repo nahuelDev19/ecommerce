@@ -3,8 +3,6 @@ package com.nahuel.ecommerce.dtos;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -13,14 +11,21 @@ import java.util.UUID;
 @Builder
 public class FiltrosBusquedaProductoDto {
 
-    private String consulta;
+    private String nombre;
 
-    private List<UUID> idsCategorias;
 
     private BigDecimal precioMinimo;
 
     private BigDecimal precioMaximo;
 
     private Boolean soloActivos;
+
+    private  Direccion direccion= Direccion.ASC;
+
+    private String sortBy="nombre";
+
+    private int page = 0;
+
+    private int size = 10;
 
 }

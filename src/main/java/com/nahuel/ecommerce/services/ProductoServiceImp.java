@@ -1,11 +1,15 @@
 package com.nahuel.ecommerce.services;
 
+import com.nahuel.ecommerce.dtos.Direccion;
+import com.nahuel.ecommerce.dtos.FiltrosBusquedaProductoDto;
 import com.nahuel.ecommerce.dtos.ProductoDto;
 import com.nahuel.ecommerce.entitys.Producto;
 import com.nahuel.ecommerce.repositories.ProductoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
@@ -60,9 +64,24 @@ public class ProductoServiceImp implements ProductoService {
     }
 
     @Override
-    public Page<ProductoDto> buscarProductos(Pageable pageable, String nombre, String moneda, Boolean activo) {
-        return null;
+    public Page<ProductoDto> buscarProductos(FiltrosBusquedaProductoDto dto) {
+
+        if(dto.getPrecioMinimo() != null && dto.getPrecioMaximo() != null && dto.getPrecioMinimo().compareTo(dto.getPrecioMaximo())>0){
+            throw new RuntimeException("El precio mínimo no puede ser mayor al precio maximo");
+        }
+
+        Sort sort = dto.getDireccion()== Direccion.DESC ?
+                Sort.by(dto.getSortBy()).descending() :
+                Sort.by(dto.getSortBy()).ascending();
+
+        Pageable pageable = PageRequest.of(dto.getPage(),dto.getSize(),sort);
+
+        Page <Producto> resultado = productoRepository.buscarConFiltros(
+                dto.getNombre(), dto.getPrecioMinimo(), dto.getPrecioMaximo(), pageable);
+
+        return resultado.map(this::convertirProductoDTO);
     }
+
 
     @Override
     public void descontinuarProducto(UUID id) {
