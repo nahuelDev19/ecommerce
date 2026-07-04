@@ -50,7 +50,7 @@ public class ProductoServiceImp implements ProductoService {
 
     @Override
     public void eliminarPorId(UUID id) {
-
+        //para uso de cron
     }
 
     @Override
@@ -77,7 +77,7 @@ public class ProductoServiceImp implements ProductoService {
         Pageable pageable = PageRequest.of(dto.getPage(),dto.getSize(),sort);
 
         Page <Producto> resultado = productoRepository.buscarConFiltros(
-                dto.getNombre(), dto.getPrecioMinimo(), dto.getPrecioMaximo(), pageable);
+                dto.getNombre(), dto.getPrecioMinimo(), dto.getPrecioMaximo(),dto.getSoloActivos(), pageable);
 
         return resultado.map(this::convertirProductoDTO);
     }

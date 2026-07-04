@@ -21,7 +21,7 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID> {
     @Query("""
     SELECT p
     FROM Producto p
-    WHERE p.activo = true
+    WHERE(:soloActivos= false OR p.activo=true)
     AND (CAST(:nombre AS string) IS NULL OR LOWER(p.nombre) LIKE CONCAT('%', LOWER(CAST(:nombre AS string)), '%'))
     AND (:precioMin IS NULL OR p.precioBase >= :precioMin)
     AND (:precioMax IS NULL OR p.precioBase <= :precioMax)
@@ -30,6 +30,7 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID> {
             @Param("nombre") String nombre,
             @Param("precioMin") BigDecimal precioMin,
             @Param("precioMax") BigDecimal precioMax,
+            @Param("soloActivo") boolean soloActivo,
             Pageable pageable
     );
 }

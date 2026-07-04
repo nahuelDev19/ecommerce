@@ -18,7 +18,7 @@ public class FiltrosBusquedaProductoDto {
 
     private BigDecimal precioMaximo;
 
-    private Boolean soloActivos;
+    private Boolean soloActivos = true;
 
     private  Direccion direccion= Direccion.ASC;
 

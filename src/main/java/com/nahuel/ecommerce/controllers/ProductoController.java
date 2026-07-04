@@ -8,8 +8,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.awt.print.Pageable;
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -42,4 +44,25 @@ public class ProductoController {
         return ResponseEntity.ok(productoService.buscarProductos(dto));
     }
 
+    @DeleteMapping("/{id}/definitivo")
+    public ResponseEntity<Void> eliminarDefinitivo(@PathVariable UUID id){
+        productoService.eliminarPorId(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/descontinuados")
+    public ResponseEntity<List<ProductoDto>> listarDescontinuados() {
+        return ResponseEntity.ok(productoService.listarDescontinuados());
+    }
+
+    @PostMapping(value="/importar", consumes = "multipart/form-data")
+    public ResponseEntity<List<ProductoDto>> importarDesdeExcel(@RequestParam("archivo") MultipartFile file) throws IOException {
+        List<ProductoDto> listaCreados= productoService.cargarProductosDesdeExcel(file.getInputStream());
+        return ResponseEntity.status(HttpStatus.CREATED).body(listaCreados);
+    }
+
+    @PutMapping("/actualizar/{id}")
+    public ResponseEntity<?> actualizarProducto(@PathVariable UUID id, ProductoDto dto){
+        return ResponseEntity.ok(productoService.actualizarPorId(id,dto));
+    }
 }
