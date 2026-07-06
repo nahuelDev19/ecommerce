@@ -1,9 +1,13 @@
 package com.nahuel.ecommerce.dtos;
 
+import java.util.UUID;
+
 public class ActualizarCantidadRequestDto {
 
 
 
-    private Integer cantidad ;
+    private UUID id;
+    private Integer cantidad;
 
 }
+
