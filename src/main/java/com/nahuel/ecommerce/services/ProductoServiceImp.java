@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -37,25 +38,27 @@ public class ProductoServiceImp implements ProductoService {
 
         Producto guardado = productoRepository.save(producto);
 
-        return ProductoDto.builder()
-                .id(guardado.getId())
-                .nombre(guardado.getNombre())
-                .descripcion(guardado.getDescripcion())
-                .precioBase(guardado.getPrecioBase())
-                .moneda(guardado.getMoneda())
-                .activo(guardado.getActivo())
-                .fechaDescontinuado(guardado.getFechaDescontinuado())
-                .build();
+        return convertirProductoDTO(guardado);
     }
 
     @Override
     public void eliminarPorId(UUID id) {
         //para uso de cron
+        productoRepository.deleteById(id);
     }
 
     @Override
     public ProductoDto actualizarPorId(UUID id, ProductoDto dto) {
-        return null;
+        Producto productoExistente= productoRepository.findById(id).orElseThrow(()-> new RuntimeException("producto no se encontro en DB"));
+        productoExistente.setNombre(dto.getNombre());
+        productoExistente.setDescripcion(dto.getDescripcion());
+        productoExistente.setPrecioBase(dto.getPrecioBase());
+        productoExistente.setMoneda(dto.getMoneda());
+        productoExistente.setActivo(dto.getActivo());
+        productoExistente.setFechaDescontinuado(dto.getFechaDescontinuado());
+
+        Producto actualizado = productoRepository.save(productoExistente);
+        return convertirProductoDTO(actualizado);
     }
 
     @Override
@@ -93,7 +96,8 @@ public class ProductoServiceImp implements ProductoService {
 
     @Override
     public List<ProductoDto> listarTodos() {
-        return List.of();
+        List<Producto> listDto= productoRepository.findAll();
+        return listDto.stream().map(this::convertirProductoDTO).toList();
     }
 
     @Override
@@ -103,7 +107,8 @@ public class ProductoServiceImp implements ProductoService {
 
     @Override
     public List<ProductoDto> listarDescontinuados() {
-        return List.of();
+        List<Producto> listDto= productoRepository.findAll();
+        return listDto.stream().map(this::convertirProductoDTO).filter(p-> !p.getActivo()).toList();
     }
 
     private ProductoDto convertirProductoDTO(Producto producto){
