@@ -1,4 +1,4 @@
-package com.nahuel.ecommerce.entitys;
+package com.nahuel.ecommerce.dtos;
 
 import lombok.Data;
 

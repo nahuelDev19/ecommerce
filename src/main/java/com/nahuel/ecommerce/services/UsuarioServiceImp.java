@@ -1,7 +1,7 @@
 package com.nahuel.ecommerce.services;
 
 import com.nahuel.ecommerce.entitys.Usuario;
-import com.nahuel.ecommerce.entitys.UsuarioDto;
+import com.nahuel.ecommerce.dtos.UsuarioDto;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

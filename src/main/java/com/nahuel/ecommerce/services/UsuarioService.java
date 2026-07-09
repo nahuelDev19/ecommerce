@@ -1,6 +1,6 @@
 package com.nahuel.ecommerce.services;
 
-import com.nahuel.ecommerce.entitys.UsuarioDto;
+import com.nahuel.ecommerce.dtos.UsuarioDto;
 
 import java.util.List;
 import java.util.Optional;

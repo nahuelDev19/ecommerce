@@ -1,6 +1,6 @@
 package com.nahuel.ecommerce.controllers;
 
-import com.nahuel.ecommerce.entitys.UsuarioDto;
+import com.nahuel.ecommerce.dtos.UsuarioDto;
 import com.nahuel.ecommerce.services.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
