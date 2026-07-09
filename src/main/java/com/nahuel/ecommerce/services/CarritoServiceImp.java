@@ -3,6 +3,7 @@ package com.nahuel.ecommerce.services;
 import com.nahuel.ecommerce.entitys.Carrito;
 import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
+import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.UUID;
 public class CarritoServiceImp implements CarritoService{
 
     private final CarritoRepository carritoRepository;
+    private final UsuarioRepository usuarioRepository;
 
     @Override
     public Carrito guardar(UUID usuarioId) {

@@ -1,6 +1,9 @@
 package com.nahuel.ecommerce.entitys;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.List;
@@ -8,6 +11,9 @@ import java.util.Set;
 import java.util.UUID;
 import static com.nahuel.ecommerce.entitys.EstadoCarrito.ACTIVO;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 public class Carrito {
 
