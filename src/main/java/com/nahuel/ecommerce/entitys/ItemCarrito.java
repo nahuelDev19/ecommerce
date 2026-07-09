@@ -12,10 +12,10 @@ import java.util.UUID;
 
 @Entity
 public class ItemCarrito {
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+/*
     private Carrito carrito;
     private Producto producto;
     private Integer cantidad;
@@ -24,5 +24,7 @@ public class ItemCarrito {
     private Instant creadoEn;
     private Instant actualizadoEn;
 
+
+ */
 
 }

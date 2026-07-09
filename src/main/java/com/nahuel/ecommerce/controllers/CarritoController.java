@@ -1,40 +1,41 @@
 package com.nahuel.ecommerce.controllers;
 
-import com.nahuel.ecommerce.entitys.Carrito;
+import com.nahuel.ecommerce.dtos.CarritoDto;
 import com.nahuel.ecommerce.services.CarritoService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/carritos")
 public class CarritoController {
 
     private final CarritoService carritoService;
 
-    public CarritoController(CarritoService carritoService) {
-        this.carritoService = carritoService;
-    }
-
-    @PostMapping("/{usuarioId}")
-    public Carrito guardar(@PathVariable UUID usuarioId) {
-        return carritoService.guardar(usuarioId);
+    @PostMapping
+    public CarritoDto guardar(@RequestBody CarritoDto dto) {
+        return carritoService.guardar(dto);
     }
 
     @GetMapping
-    public List<Carrito> listar() {
+    public List<CarritoDto> listar() {
+
         return carritoService.listar();
     }
 
     @GetMapping("/{id}")
-    public Carrito buscar(@PathVariable UUID id) {
-        return carritoService.buscarPorId(id).orElseThrow();
+    public CarritoDto buscar(@PathVariable UUID id) {
+
+        return carritoService.buscarPorId(id)
+                .orElseThrow();
     }
 
     @DeleteMapping("/{id}")
     public void eliminar(@PathVariable UUID id) {
+
         carritoService.eliminar(id);
     }
-
 }

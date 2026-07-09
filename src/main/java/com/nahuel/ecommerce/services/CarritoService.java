@@ -1,5 +1,6 @@
 package com.nahuel.ecommerce.services;
 
+import com.nahuel.ecommerce.dtos.CarritoDto;
 import com.nahuel.ecommerce.entitys.Carrito;
 
 import java.util.List;
@@ -8,12 +9,11 @@ import java.util.UUID;
 
 public interface CarritoService {
 
-    Carrito guardar(UUID usuarioId);
+    CarritoDto guardar(CarritoDto dto);
 
-    List<Carrito> listar();
+    List<CarritoDto> listar();
 
-    Optional<Carrito> buscarPorId(UUID id);
+    Optional<CarritoDto> buscarPorId(UUID id);
 
     void eliminar(UUID id);
-
 }

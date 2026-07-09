@@ -1,15 +1,13 @@
 package com.nahuel.ecommerce.entitys;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-@Data
+@Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Entity
 public class Usuario {

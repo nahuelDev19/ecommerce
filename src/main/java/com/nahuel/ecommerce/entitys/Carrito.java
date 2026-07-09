@@ -1,9 +1,7 @@
 package com.nahuel.ecommerce.entitys;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.List;
@@ -11,7 +9,8 @@ import java.util.Set;
 import java.util.UUID;
 import static com.nahuel.ecommerce.entitys.EstadoCarrito.ACTIVO;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity

@@ -1,6 +1,7 @@
 package com.nahuel.ecommerce.services;
 
 import com.nahuel.ecommerce.entitys.Carrito;
+import com.nahuel.ecommerce.dtos.CarritoDto;
 import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
@@ -13,36 +14,67 @@ import java.util.Optional;
 import java.util.UUID;
 
 @RequiredArgsConstructor
-@Transactional @Service
-public class CarritoServiceImp implements CarritoService{
+@Transactional
+@Service
+public class CarritoServiceImp implements CarritoService {
 
     private final CarritoRepository carritoRepository;
     private final UsuarioRepository usuarioRepository;
 
     @Override
-    public Carrito guardar(UUID usuarioId) {
+    public CarritoDto guardar(CarritoDto dto) {
 
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Carrito carrito = toEntity(dto);
 
-        Carrito carrito = new Carrito();
-        carrito.setUsuario(usuario);
+        carrito = carritoRepository.save(carrito);
 
-        return carritoRepository.save(carrito);
+        return toDto(carrito);
     }
 
     @Override
-    public List<Carrito> listar() {
-        return carritoRepository.findAll();
+    public List<CarritoDto> listar() {
+
+        return carritoRepository.findAll()
+                .stream()
+                .map(this::toDto)
+                .toList();
     }
 
     @Override
-    public Optional<Carrito> buscarPorId(UUID id) {
-        return carritoRepository.findById(id);
+    public Optional<CarritoDto> buscarPorId(UUID id) {
+
+        return carritoRepository.findById(id)
+                .map(this::toDto);
     }
 
     @Override
     public void eliminar(UUID id) {
+
         carritoRepository.deleteById(id);
+    }
+
+    private CarritoDto toDto(Carrito carrito) {
+
+        CarritoDto dto = new CarritoDto();
+
+        dto.setId(carrito.getId());
+        dto.setEstadoCarrito(carrito.getEstadoCarrito());
+        dto.setUsuarioId(carrito.getUsuario().getId());
+
+        return dto;
+    }
+
+    private Carrito toEntity(CarritoDto dto) {
+
+        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Carrito carrito = new Carrito();
+
+        carrito.setId(dto.getId());
+        carrito.setEstadoCarrito(dto.getEstadoCarrito());
+        carrito.setUsuario(usuario);
+
+        return carrito;
     }
 }

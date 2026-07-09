@@ -1,41 +1,42 @@
 package com.nahuel.ecommerce.controllers;
 
-import com.nahuel.ecommerce.entitys.Usuario;
+import com.nahuel.ecommerce.entitys.UsuarioDto;
 import com.nahuel.ecommerce.services.UsuarioService;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
-
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("api/usuarios")
-public class UsuarioController  {
+@RequestMapping("/api/usuarios")
+public class UsuarioController {
 
     private final UsuarioService usuarioService;
 
-
-
     @PostMapping
-    public Usuario guardar() {
-        return usuarioService.guardar(new Usuario());
+    public UsuarioDto guardar(@RequestBody UsuarioDto dto) {
+
+        return usuarioService.guardar(dto);
     }
 
     @GetMapping
-    public List<Usuario> listar() {
+    public List<UsuarioDto> listar() {
+
         return usuarioService.listar();
     }
 
     @GetMapping("/{id}")
-    public Usuario buscar(@PathVariable UUID id) {
-        return usuarioService.buscarPorId(id).orElseThrow();
+    public UsuarioDto buscar(@PathVariable UUID id) {
+
+        return usuarioService.buscarPorId(id)
+                .orElseThrow();
     }
 
     @DeleteMapping("/{id}")
     public void eliminar(@PathVariable UUID id) {
+
         usuarioService.eliminar(id);
     }
 }

@@ -1,6 +1,6 @@
 package com.nahuel.ecommerce.services;
 
-import com.nahuel.ecommerce.entitys.Usuario;
+import com.nahuel.ecommerce.entitys.UsuarioDto;
 
 import java.util.List;
 import java.util.Optional;
@@ -8,11 +8,11 @@ import java.util.UUID;
 
 public interface UsuarioService {
 
-    Usuario guardar(Usuario usuario);
+    UsuarioDto guardar(UsuarioDto dto);
 
-    List<Usuario> listar();
+    List<UsuarioDto> listar();
 
-    Optional<Usuario> buscarPorId(UUID id);
+    Optional<UsuarioDto> buscarPorId(UUID id);
 
     void eliminar(UUID id);
 
