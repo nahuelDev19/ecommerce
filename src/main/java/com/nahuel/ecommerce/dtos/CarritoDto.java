@@ -12,13 +12,14 @@ public class CarritoDto {
     private UUID id;
     private EstadoCarrito estadoCarrito;
     private UUID usuarioId;
-    /*private UUID id;
-    private EstadoCarrito estadoCarrito;
+    private List<ItemCarritoDto> items;
+    private BigDecimal descuentoTotal;
+    private BigDecimal subtotal;
+    private BigDecimal total;
+    /*
+
     private List<ItemCarritoDto> items;
     //private TotalesCarritoDto totalesCarritoDto;
-    private BigDecimal subtotal;
-    private BigDecimal descuentoTotal;
-    private BigDecimal total;
     private CuponDto cuponAplicado;
 
 

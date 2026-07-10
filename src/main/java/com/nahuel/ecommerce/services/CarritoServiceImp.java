@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -61,6 +63,11 @@ public class CarritoServiceImp implements CarritoService {
         dto.setEstadoCarrito(carrito.getEstadoCarrito());
         dto.setUsuarioId(carrito.getUsuario().getId());
 
+        dto.setItems(new ArrayList<>());
+        dto.setSubtotal(BigDecimal.ZERO);
+        dto.setDescuentoTotal(BigDecimal.ZERO);
+        dto.setTotal(BigDecimal.ZERO);
+
         return dto;
     }
 
@@ -72,9 +79,9 @@ public class CarritoServiceImp implements CarritoService {
         Carrito carrito = new Carrito();
 
         carrito.setId(dto.getId());
-        carrito.setEstadoCarrito(dto.getEstadoCarrito());
         carrito.setUsuario(usuario);
 
         return carrito;
+
     }
 }

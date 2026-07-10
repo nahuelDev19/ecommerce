@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -19,14 +20,20 @@ public class Carrito {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    private EstadoCarrito EstadoCarrito= ACTIVO;
+
+    @Enumerated(EnumType.STRING)
+    private EstadoCarrito estadoCarrito= ACTIVO;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false )
     private Usuario usuario;
 
 
-    /*private String moneda;
+    @OneToMany(mappedBy = "carrito")
+    private Set<ItemCarrito> items = new HashSet<>();
+
+    /*
+    private String moneda;
     private Instant createdAt;
     private Instant updatedAt;
     private Instant ultimaInteraccion;

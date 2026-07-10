@@ -1,7 +1,10 @@
 package com.nahuel.ecommerce.controllers;
 
+import com.nahuel.ecommerce.dtos.AgregarItemRequestDto;
 import com.nahuel.ecommerce.dtos.CarritoDto;
+import com.nahuel.ecommerce.dtos.ItemCarritoDto;
 import com.nahuel.ecommerce.services.CarritoService;
+import com.nahuel.ecommerce.services.ItemCarritoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,10 +17,16 @@ import java.util.UUID;
 public class CarritoController {
 
     private final CarritoService carritoService;
+    private final ItemCarritoService itemCarritoService;
 
     @PostMapping
     public CarritoDto guardar(@RequestBody CarritoDto dto) {
         return carritoService.guardar(dto);
+    }
+
+    @PostMapping("/{carritoId}/items")
+    public AgregarItemRequestDto agregarItemsCarrito(@RequestBody AgregarItemRequestDto dto) {
+        return ItemCarritoService.s(dto);
     }
 
     @GetMapping
