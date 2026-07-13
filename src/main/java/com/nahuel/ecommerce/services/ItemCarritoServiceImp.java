@@ -30,29 +30,7 @@ public class ItemCarritoServiceImp implements ItemCarritoService{
     private final UsuarioRepository usuarioRepository;
     private final CarritoService carritoService;
 
-    /*
-    Buscar carrito
 
-↓
-
-Buscar producto
-
-↓
-
-¿Existe ese producto en el carrito?
-
-        Sí -----------------> aumentar cantidad
-
-        No -----------------> crear ItemCarrito
-
-↓
-
-Guardar
-
-↓
-
-Devolver carrito actualizado
-     */
 
     public CarritoDto agregarItem(AgregarItemRequestDto dto){
 
@@ -96,64 +74,47 @@ Devolver carrito actualizado
         return toDto(carrito);
     }
 
-
     @Override
-    public CarritoDto actualizarCantidad(UUID carritoId, UUID itemId, Integer cantidad) {
+    public CarritoDto disminuirItem(AgregarItemRequestDto dto) {
 
-        ItemCarrito item = itemCarritoRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("Item no encontrado"));
+        usuarioRepository.findById(dto.getUsuarioId())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        item.setCantidad(cantidad);
+        productoRepository.findById(dto.getProductoId())
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
+        Carrito carrito = carritoRepository
+                .findByUsuarioIdAndEstadoCarrito(dto.getUsuarioId(), ACTIVO)
+                .orElseThrow(() -> new RuntimeException("Carrito no encontrado o inactivo"));
+
+        ItemCarrito item = itemCarritoRepository
+                .findByCarritoIdAndProductoId(carrito.getId(), dto.getProductoId())
+                .orElseThrow(() -> new RuntimeException("El producto no existe en el carrito"));
+
+        int nuevaCantidad = item.getCantidad() - dto.getCantidad();
+
+        if (nuevaCantidad < 1) {
+            throw new RuntimeException("La cantidad mínima permitida es 1");
+        }
+
+        item.setCantidad(nuevaCantidad);
         itemCarritoRepository.save(item);
 
-        return null;
-    }
+        BigDecimal total = carrito.getItems().stream()
+                .map(i -> i.getPrecioUnitario().multiply(BigDecimal.valueOf(i.getCantidad())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        carrito.setTotal(total);
+        carrito.setActualizadoEn(Instant.now());
+        carrito.setUltimaInteraccion(Instant.now());
+
+        carritoRepository.save(carrito);
+
+        return toDto(carrito);
+    }
     @Override
-    public CarritoDto eliminarProducto(UUID carritoId, UUID itemId) {
-
-        ItemCarrito item = itemCarritoRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("Item no encontrado"));
-
-        itemCarritoRepository.delete(item);
-
+    public CarritoDto eliminarItem(AgregarItemRequestDto dto) {
         return null;
-    }
-
-    @Override
-    public ItemCarritoDto obtenerPorId(UUID itemId) {
-
-        ItemCarrito item = itemCarritoRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("Item no encontrado"));
-        return null;
-    }
-
-    @Override
-    public List<ItemCarritoDto> listarPorCarrito(UUID carritoId) {
-
-        return itemCarritoRepository.findByCarritoId(carritoId)
-                .stream()
-                .map(this::toDto)
-                .toList();
-    }
-
-    private ItemCarritoDto toDto1(ItemCarrito item) {
-
-        ItemCarritoDto dto = new ItemCarritoDto();
-
-        dto.setId(item.getId());
-        dto.setProductoId(item.getProducto().getId());
-        dto.setNombreProducto(item.getProducto().getNombre());
-        dto.setCantidad(item.getCantidad());
-        dto.setPrecioUnitario(item.getPrecioUnitario());
-
-        dto.setSubtotal(
-                item.getPrecioUnitario()
-                        .multiply(BigDecimal.valueOf(item.getCantidad()))
-        );
-
-        return dto;
     }
 
     private CarritoDto toDto(Carrito carrito) {

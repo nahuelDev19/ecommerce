@@ -2,10 +2,6 @@ package com.nahuel.ecommerce.services;
 
 import com.nahuel.ecommerce.dtos.AgregarItemRequestDto;
 import com.nahuel.ecommerce.dtos.CarritoDto;
-import com.nahuel.ecommerce.dtos.ItemCarritoDto;
-
-import java.util.List;
-import java.util.UUID;
 
 public interface ItemCarritoService {
 
@@ -17,14 +13,8 @@ public interface ItemCarritoService {
     */
 
     CarritoDto agregarItem(AgregarItemRequestDto dto);
-
-    CarritoDto actualizarCantidad(UUID carritoId, UUID itemId, Integer cantidad);
-
-    CarritoDto eliminarProducto(UUID carritoId, UUID itemId);
-
-    ItemCarritoDto obtenerPorId(UUID itemId);
-
-    List<ItemCarritoDto> listarPorCarrito(UUID carritoId);
+    CarritoDto disminuirItem(AgregarItemRequestDto dto);
+    CarritoDto eliminarItem(AgregarItemRequestDto dto);
 
 
 }

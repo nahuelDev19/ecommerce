@@ -31,6 +31,12 @@ public class CarritoController {
         return ResponseEntity.ok(carritoDto);
     }
 
+    @PostMapping("/disminuir")
+    public ResponseEntity<?> disminuirItemCarrito(@RequestBody AgregarItemRequestDto dto){
+        CarritoDto carritoDto= itemCarritoService.disminuirItem(dto);
+        return ResponseEntity.ok(carritoDto);
+    }
+
 
     /*@PostMapping("/{carritoId}/items")
     public AgregarItemRequestDto agregarItemsCarrito(@RequestBody AgregarItemRequestDto dto) {
