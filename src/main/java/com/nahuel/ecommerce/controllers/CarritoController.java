@@ -2,6 +2,7 @@ package com.nahuel.ecommerce.controllers;
 
 import com.nahuel.ecommerce.dtos.AgregarItemRequestDto;
 import com.nahuel.ecommerce.dtos.CarritoDto;
+import com.nahuel.ecommerce.dtos.EliminarItemCarritoDto;
 import com.nahuel.ecommerce.dtos.ItemCarritoDto;
 import com.nahuel.ecommerce.services.CarritoService;
 import com.nahuel.ecommerce.services.ItemCarritoService;
@@ -37,13 +38,13 @@ public class CarritoController {
         return ResponseEntity.ok(carritoDto);
     }
 
-
-    /*@PostMapping("/{carritoId}/items")
-    public AgregarItemRequestDto agregarItemsCarrito(@RequestBody AgregarItemRequestDto dto) {
-        return itemCarritoService.agregarProducto(dto);
+    @DeleteMapping("/eliminar/item")
+    public ResponseEntity<?> eliminarItemCarrito(@RequestBody EliminarItemCarritoDto dto){
+        CarritoDto carritoDto= itemCarritoService.eliminarItem(dto);
+        return ResponseEntity.ok(carritoDto);
     }
 
-     */
+
 
     @GetMapping
     public List<CarritoDto> listar() {

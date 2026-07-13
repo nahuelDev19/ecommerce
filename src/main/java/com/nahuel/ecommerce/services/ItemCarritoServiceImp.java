@@ -2,6 +2,7 @@ package com.nahuel.ecommerce.services;
 
 import com.nahuel.ecommerce.dtos.AgregarItemRequestDto;
 import com.nahuel.ecommerce.dtos.CarritoDto;
+import com.nahuel.ecommerce.dtos.EliminarItemCarritoDto;
 import com.nahuel.ecommerce.dtos.ItemCarritoDto;
 import com.nahuel.ecommerce.entitys.Carrito;
 import com.nahuel.ecommerce.entitys.ItemCarrito;
@@ -18,6 +19,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
 
+import static com.nahuel.ecommerce.entitys.EstadoCarrito.ABANDONADO;
 import static com.nahuel.ecommerce.entitys.EstadoCarrito.ACTIVO;
 
 @RequiredArgsConstructor
@@ -113,8 +115,38 @@ public class ItemCarritoServiceImp implements ItemCarritoService{
         return toDto(carrito);
     }
     @Override
-    public CarritoDto eliminarItem(AgregarItemRequestDto dto) {
-        return null;
+    public CarritoDto eliminarItem(EliminarItemCarritoDto dto) {
+
+        Carrito carrito = carritoRepository
+                .findByUsuarioIdAndEstadoCarrito(dto.getUsuarioId(), ACTIVO)
+                .orElseThrow(() -> new RuntimeException("Carrito no encontrado o inactivo"));
+
+        ItemCarrito item = itemCarritoRepository
+                .findByCarritoIdAndProductoId(carrito.getId(), dto.getProductoId())
+                .orElseThrow(() -> new RuntimeException("El producto no existe en el carrito"));
+
+        // Eliminar el item
+        carrito.getItems().remove(item);
+        itemCarritoRepository.delete(item);
+
+        // Si el carrito quedó vacío, desactivarlo
+        if (carrito.getItems().isEmpty()) {
+            carrito.setEstadoCarrito(ABANDONADO);
+            carrito.setTotal(BigDecimal.ZERO);
+        } else {
+            BigDecimal total = carrito.getItems().stream()
+                    .map(i -> i.getPrecioUnitario().multiply(BigDecimal.valueOf(i.getCantidad())))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            carrito.setTotal(total);
+        }
+
+        carrito.setActualizadoEn(Instant.now());
+        carrito.setUltimaInteraccion(Instant.now());
+
+        carritoRepository.save(carrito);
+
+        return toDto(carrito);
     }
 
     private CarritoDto toDto(Carrito carrito) {
