@@ -4,6 +4,7 @@ import com.nahuel.ecommerce.entitys.EstadoCarrito;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 @Data
@@ -15,6 +16,9 @@ public class CarritoDto {
     private List<ItemCarritoDto> items;
     private BigDecimal descuentoTotal;
     private BigDecimal subtotal;
+    private Instant creadoEn;
+    private Instant actualizadoEn;
+    private Instant ultimaInteraccion;
     private BigDecimal total;
     /*
 
