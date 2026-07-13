@@ -14,6 +14,7 @@ import com.nahuel.ecommerce.repositories.ProductoRepository;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -22,6 +23,7 @@ import java.util.*;
 import static com.nahuel.ecommerce.entitys.EstadoCarrito.ABANDONADO;
 import static com.nahuel.ecommerce.entitys.EstadoCarrito.ACTIVO;
 
+@Transactional
 @RequiredArgsConstructor
 @Service
 public class ItemCarritoServiceImp implements ItemCarritoService{
@@ -67,10 +69,7 @@ public class ItemCarritoServiceImp implements ItemCarritoService{
             carrito.getItems().add(item);
             itemCarritoRepository.save(item);
         }
-        BigDecimal total= carrito.getItems().stream()
-                .map(item -> item.getPrecioUnitario().multiply(BigDecimal.valueOf(item.getCantidad())))
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-        carrito.setTotal(total);
+
         carrito.setActualizadoEn(Instant.now());
         carrito.setUltimaInteraccion(Instant.now());
         return toDto(carrito);
@@ -102,11 +101,7 @@ public class ItemCarritoServiceImp implements ItemCarritoService{
         item.setCantidad(nuevaCantidad);
         itemCarritoRepository.save(item);
 
-        BigDecimal total = carrito.getItems().stream()
-                .map(i -> i.getPrecioUnitario().multiply(BigDecimal.valueOf(i.getCantidad())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        carrito.setTotal(total);
         carrito.setActualizadoEn(Instant.now());
         carrito.setUltimaInteraccion(Instant.now());
 
@@ -132,13 +127,6 @@ public class ItemCarritoServiceImp implements ItemCarritoService{
         // Si el carrito quedó vacío, desactivarlo
         if (carrito.getItems().isEmpty()) {
             carrito.setEstadoCarrito(ABANDONADO);
-            carrito.setTotal(BigDecimal.ZERO);
-        } else {
-            BigDecimal total = carrito.getItems().stream()
-                    .map(i -> i.getPrecioUnitario().multiply(BigDecimal.valueOf(i.getCantidad())))
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            carrito.setTotal(total);
         }
 
         carrito.setActualizadoEn(Instant.now());
@@ -156,12 +144,12 @@ public class ItemCarritoServiceImp implements ItemCarritoService{
         dto.setId(carrito.getId());
         dto.setEstadoCarrito(carrito.getEstadoCarrito());
         dto.setUsuarioId(carrito.getUsuario().getId());
-        dto.setSubtotal(carrito.getSubtotal());
-        dto.setDescuentoTotal(carrito.getDescuentoTotal());
+        //  dto.setSubtotal(carrito.getSubtotal());
+        //  dto.setDescuentoTotal(carrito.getDescuentoTotal());
         dto.setCreadoEn(carrito.getCreadoEn());
         dto.setActualizadoEn(carrito.getActualizadoEn());
         dto.setUltimaInteraccion(carrito.getUltimaInteraccion());
-        dto.setTotal(carrito.getTotal());
+        dto.setTotal(calcularTotal(carrito));
 
         dto.setItems(
                 carrito.getItems()
@@ -186,6 +174,13 @@ public class ItemCarritoServiceImp implements ItemCarritoService{
                 .multiply(BigDecimal.valueOf(item.getCantidad())));
 
         return dto;
+    }
+
+    private BigDecimal calcularTotal(Carrito carrito) {
+        return carrito.getItems().stream()
+                .map(item -> item.getPrecioUnitario()
+                        .multiply(BigDecimal.valueOf(item.getCantidad())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
 }

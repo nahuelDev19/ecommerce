@@ -52,7 +52,6 @@ public class CarritoController {
 
     @GetMapping("/{id}")
     public CarritoDto buscar(@PathVariable UUID id) {
-
         return carritoService.buscarPorId(id)
                 .orElseThrow();
     }

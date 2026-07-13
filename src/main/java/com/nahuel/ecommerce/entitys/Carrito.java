@@ -33,13 +33,12 @@ public class Carrito {
     @OneToMany(mappedBy = "carrito")
     private Set<ItemCarrito> items = new HashSet<>();
 
-    private BigDecimal subtotal;
-    private BigDecimal descuentoTotal;
-    private BigDecimal total;
+    //private BigDecimal subtotal;
+    //private BigDecimal descuentoTotal;
+    //private BigDecimal total;
     private Instant creadoEn;
     private Instant actualizadoEn;
     private Instant ultimaInteraccion;
-    private Instant abandonedAt;
 
     /*
     private String moneda;
