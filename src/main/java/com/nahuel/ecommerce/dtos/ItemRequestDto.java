@@ -5,7 +5,7 @@ import lombok.Data;
 import java.util.UUID;
 
 @Data
-public class AgregarItemRequestDto {
+public class ItemRequestDto {
 
     private UUID usuarioId;
     private UUID productoId;

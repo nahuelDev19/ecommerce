@@ -1,6 +1,6 @@
 package com.nahuel.ecommerce.services;
 
-import com.nahuel.ecommerce.dtos.AgregarItemRequestDto;
+import com.nahuel.ecommerce.dtos.ItemRequestDto;
 import com.nahuel.ecommerce.dtos.CarritoDto;
 import com.nahuel.ecommerce.dtos.EliminarItemCarritoDto;
 
@@ -13,8 +13,8 @@ public interface ItemCarritoService {
     Buscar un ítem.
     */
 
-    CarritoDto agregarItem(AgregarItemRequestDto dto);
-    CarritoDto disminuirItem(AgregarItemRequestDto dto);
+    CarritoDto agregarItem(ItemRequestDto dto);
+    CarritoDto disminuirItem(ItemRequestDto dto);
     CarritoDto eliminarItem(EliminarItemCarritoDto dto);
 
 

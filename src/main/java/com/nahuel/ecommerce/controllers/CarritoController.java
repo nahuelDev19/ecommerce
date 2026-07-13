@@ -1,9 +1,8 @@
 package com.nahuel.ecommerce.controllers;
 
-import com.nahuel.ecommerce.dtos.AgregarItemRequestDto;
+import com.nahuel.ecommerce.dtos.ItemRequestDto;
 import com.nahuel.ecommerce.dtos.CarritoDto;
 import com.nahuel.ecommerce.dtos.EliminarItemCarritoDto;
-import com.nahuel.ecommerce.dtos.ItemCarritoDto;
 import com.nahuel.ecommerce.services.CarritoService;
 import com.nahuel.ecommerce.services.ItemCarritoService;
 import lombok.RequiredArgsConstructor;
@@ -27,13 +26,13 @@ public class CarritoController {
     }
 
     @PostMapping("/agregar")
-    public ResponseEntity<?> agregarItemCarrito(@RequestBody AgregarItemRequestDto dto){
+    public ResponseEntity<?> agregarItemCarrito(@RequestBody ItemRequestDto dto){
         CarritoDto carritoDto= itemCarritoService.agregarItem(dto);
         return ResponseEntity.ok(carritoDto);
     }
 
     @PostMapping("/disminuir")
-    public ResponseEntity<?> disminuirItemCarrito(@RequestBody AgregarItemRequestDto dto){
+    public ResponseEntity<?> disminuirItemCarrito(@RequestBody ItemRequestDto dto){
         CarritoDto carritoDto= itemCarritoService.disminuirItem(dto);
         return ResponseEntity.ok(carritoDto);
     }
@@ -48,7 +47,6 @@ public class CarritoController {
 
     @GetMapping
     public List<CarritoDto> listar() {
-
         return carritoService.listar();
     }
 

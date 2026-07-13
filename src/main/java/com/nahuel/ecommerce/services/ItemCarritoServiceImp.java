@@ -1,6 +1,6 @@
 package com.nahuel.ecommerce.services;
 
-import com.nahuel.ecommerce.dtos.AgregarItemRequestDto;
+import com.nahuel.ecommerce.dtos.ItemRequestDto;
 import com.nahuel.ecommerce.dtos.CarritoDto;
 import com.nahuel.ecommerce.dtos.EliminarItemCarritoDto;
 import com.nahuel.ecommerce.dtos.ItemCarritoDto;
@@ -34,7 +34,7 @@ public class ItemCarritoServiceImp implements ItemCarritoService{
 
 
 
-    public CarritoDto agregarItem(AgregarItemRequestDto dto){
+    public CarritoDto agregarItem(ItemRequestDto dto){
 
         Usuario usuario= usuarioRepository.findById(dto.getUsuarioId()).orElseThrow(()-> new RuntimeException("usuario no encontrado"));
         Producto producto = productoRepository.findById(dto.getProductoId()).orElseThrow(() -> new RuntimeException("Producto no encontrado"));
@@ -77,7 +77,7 @@ public class ItemCarritoServiceImp implements ItemCarritoService{
     }
 
     @Override
-    public CarritoDto disminuirItem(AgregarItemRequestDto dto) {
+    public CarritoDto disminuirItem(ItemRequestDto dto) {
 
         usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
