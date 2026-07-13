@@ -3,6 +3,7 @@ package com.nahuel.ecommerce.entitys;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
@@ -31,6 +32,10 @@ public class Carrito {
 
     @OneToMany(mappedBy = "carrito")
     private Set<ItemCarrito> items = new HashSet<>();
+
+    public BigDecimal subtotal;
+    public BigDecimal descuentoTotal;
+    public BigDecimal total;
 
     /*
     private String moneda;

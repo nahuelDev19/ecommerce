@@ -6,6 +6,7 @@ import com.nahuel.ecommerce.dtos.ItemCarritoDto;
 import com.nahuel.ecommerce.services.CarritoService;
 import com.nahuel.ecommerce.services.ItemCarritoService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,10 +25,19 @@ public class CarritoController {
         return carritoService.guardar(dto);
     }
 
-    @PostMapping("/{carritoId}/items")
-    public AgregarItemRequestDto agregarItemsCarrito(@RequestBody AgregarItemRequestDto dto) {
-        return ItemCarritoService.s(dto);
+    @PostMapping("/agregar")
+    public ResponseEntity<?> agregarItemCarrito(@RequestBody AgregarItemRequestDto dto){
+        CarritoDto carritoDto= itemCarritoService.agregarItem(dto);
+        return ResponseEntity.ok(carritoDto);
     }
+
+
+    /*@PostMapping("/{carritoId}/items")
+    public AgregarItemRequestDto agregarItemsCarrito(@RequestBody AgregarItemRequestDto dto) {
+        return itemCarritoService.agregarProducto(dto);
+    }
+
+     */
 
     @GetMapping
     public List<CarritoDto> listar() {

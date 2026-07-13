@@ -7,6 +7,7 @@ import java.util.UUID;
 @Data
 public class AgregarItemRequestDto {
 
+    private UUID usuarioId;
     private UUID productoId;
     private Integer cantidad;
 

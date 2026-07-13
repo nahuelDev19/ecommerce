@@ -16,7 +16,7 @@ public interface ItemCarritoService {
     Buscar un ítem.
     */
 
-    CarritoDto agregarProducto(UUID carritoId, AgregarItemRequestDto dto);
+    CarritoDto agregarItem(AgregarItemRequestDto dto);
 
     CarritoDto actualizarCantidad(UUID carritoId, UUID itemId, Integer cantidad);
 
