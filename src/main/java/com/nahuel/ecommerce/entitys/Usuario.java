@@ -18,5 +18,9 @@ public class Usuario {
     private UUID id;
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Carrito> carritos= new HashSet<>();
+    private String nombreUsuario;
+    private String contrasena;
+    private String email;
+
 
 }

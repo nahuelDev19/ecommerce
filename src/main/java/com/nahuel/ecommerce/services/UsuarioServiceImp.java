@@ -55,6 +55,9 @@ public class UsuarioServiceImp implements UsuarioService {
         UsuarioDto dto = new UsuarioDto();
 
         dto.setId(usuario.getId());
+        dto.setNombreUsuario(usuario.getNombreUsuario());
+        dto.setEmail(usuario.getEmail());
+
 
         return dto;
     }
@@ -64,6 +67,9 @@ public class UsuarioServiceImp implements UsuarioService {
         Usuario usuario = new Usuario();
 
         usuario.setId(dto.getId());
+        usuario.setNombreUsuario(dto.getNombreUsuario());
+        usuario.setContrasena(dto.getContrasena());
+        usuario.setEmail(dto.getEmail());
 
         return usuario;
     }

@@ -8,6 +8,10 @@ import java.util.UUID;
 public class UsuarioDto {
 
     private UUID id;
+    private String nombreUsuario;
+    private String contrasena;
+    private String email;
+
 
 
 }
