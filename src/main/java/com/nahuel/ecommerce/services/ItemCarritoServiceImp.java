@@ -113,11 +113,9 @@ public class ItemCarritoServiceImp implements ItemCarritoService{
 @Override
 public CarritoDto disminuirItem(ItemRequestDto dto) {
 
-    usuarioRepository.findById(dto.getUsuarioId())
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-    productoRepository.findById(dto.getProductoId())
-            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+    if (dto.getCantidad() <= 0) {
+        throw new RuntimeException("La cantidad debe ser mayor a cero");
+    }
 
     Carrito carrito = carritoRepository
             .findByUsuarioIdAndEstadoCarrito(dto.getUsuarioId(), ACTIVO)
@@ -129,29 +127,25 @@ public CarritoDto disminuirItem(ItemRequestDto dto) {
 
     int nuevaCantidad = item.getCantidad() - dto.getCantidad();
 
-    // Si la cantidad resultante es 0 (o negativa), eliminamos el item del carrito
     if (nuevaCantidad <= 0) {
-        carrito.getItems().remove(item);     // asegura que el listado quede sin ese item
-        itemCarritoRepository.delete(item); // elimina de BD
-
+        carrito.getItems().remove(item);
+        itemCarritoRepository.delete(item);
     } else {
-        // Si aún queda cantidad positiva, actualizamos el item
         item.setCantidad(nuevaCantidad);
-        itemCarritoRepository.save(item);
     }
 
     if (carrito.getItems().isEmpty()) {
         carrito.setEstadoCarrito(ABANDONADO);
     }
 
+    Instant ahora = Instant.now();
+    carrito.setActualizadoEn(ahora);
+    carrito.setUltimaInteraccion(ahora);
 
-    carrito.setActualizadoEn(Instant.now());
-    carrito.setUltimaInteraccion(Instant.now());
     carritoRepository.save(carrito);
 
     return toDto(carrito);
 }
-
 
     @Override
     public CarritoDto eliminarItem(EliminarItemCarritoDto dto) {
@@ -164,23 +158,21 @@ public CarritoDto disminuirItem(ItemRequestDto dto) {
                 .findByCarritoIdAndProductoId(carrito.getId(), dto.getProductoId())
                 .orElseThrow(() -> new RuntimeException("El producto no existe en el carrito"));
 
-        // Eliminar el item
         carrito.getItems().remove(item);
         itemCarritoRepository.delete(item);
 
-        // Si el carrito quedó vacío, desactivarlo
         if (carrito.getItems().isEmpty()) {
             carrito.setEstadoCarrito(ABANDONADO);
         }
 
-        carrito.setActualizadoEn(Instant.now());
-        carrito.setUltimaInteraccion(Instant.now());
+        Instant ahora = Instant.now();
+        carrito.setActualizadoEn(ahora);
+        carrito.setUltimaInteraccion(ahora);
 
         carritoRepository.save(carrito);
 
         return toDto(carrito);
     }
-
     private CarritoDto toDto(Carrito carrito) {
 
         CarritoDto dto = new CarritoDto();
