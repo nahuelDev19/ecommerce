@@ -1,6 +1,7 @@
 package com.nahuel.ecommerce.config;
 
 import com.nahuel.ecommerce.entitys.Carrito;
+import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,25 +25,36 @@ public class CronConfig {
     @Scheduled(cron = "0 */2 * * * *")
     public void recordatorioCarritoAbandonado(){
 
+        try {
+
         List<Carrito> carritos= carritoRepository.findCarritoUltimaInteraccion(Instant.now().minusSeconds(10*60));
-        if (carritos.isEmpty()) {
-            log.info("Job de limpieza finalizado: no se encontraron carritos");
+        if (carritos==null || carritos.isEmpty()) {
+            log.info("Job de recordatorio finalizado: no se encontraron carritos");
             return;
         }
 
         carritos.forEach(carrito -> {
             try {
-                System.out.println(
-                        "hola "+
-                        carrito.getUsuario().getId() + "dejaste abandonado tu carrito."
+                Usuario usuario= carrito.getUsuario();
+                String mensaje = String.format(
+                        "Hola %s, olvidaste %d producto(s) en tu carrito. ¡Todavía te están esperando!",
+                        usuario.getNombreUsuario(),
+                        carrito.getItems().size()
                 );
-                //log.debug("Producto eliminado - id={}, nombre={}", producto.getId(), producto.getNombre());
+                System.out.println(mensaje);
+                log.info("Enviando recordatorio al usuario {}: {}",
+                        usuario.getId(),
+                        mensaje);
             } catch (Exception e) {
-                //log.error("Error al eliminar producto id={}, nombre={}", producto.getId(), producto.getNombre(), e);
-            }
+                log.error("Error al procesar el carrito {}",
+                        carrito.getId(), e);            }
         });
 
-        //log.info("Job de limpieza finalizado: {} carritos", carritos.size());
+        log.info("Job finalizado. Carritos procesados: {}", carritos.size());
+        }catch (Exception e){
+            log.error("Error al ejecutar el job de recordatorio de carrito abandonado.", e);
+
+        }
 
 
     }
