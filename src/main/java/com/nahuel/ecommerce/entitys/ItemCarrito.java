@@ -30,6 +30,7 @@ public class ItemCarrito {
     private BigDecimal precioUnitario;
 
 
+    private Instant actualizadoEn;
 
 
 /*
@@ -39,7 +40,6 @@ public class ItemCarrito {
     private BigDecimal subTotal;
     private BigDecimal total;
     private Instant creadoEn;
-    private Instant actualizadoEn;
 
 
  */

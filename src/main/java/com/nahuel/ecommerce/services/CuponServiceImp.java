@@ -63,15 +63,22 @@ public class CuponServiceImp implements CuponeService {
     }
 
     @Override
-    public void eliminarCuporPorId(UUID id) {
+    public boolean eliminarCuponPorId(UUID id) {
         Cupon cupon = cuponesRepository.findById(id)
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Cupon no encontrado: " + id));
         cuponesRepository.delete(cupon);
+        return false;
     }
 
     @Override
-    public void eliminarDesactivos() {
+    public boolean eliminarDesactivos() {
         cuponesRepository.deleteByActivoFalse();
+        return true;
+    }
+
+    @Override
+    public boolean desactivarCupon() {
+        return false;
     }
 
     @Override

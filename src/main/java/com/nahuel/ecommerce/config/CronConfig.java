@@ -27,7 +27,7 @@ public class CronConfig {
 
         try {
 
-        List<Carrito> carritos= carritoRepository.findCarritoUltimaInteraccion(Instant.now().minusSeconds(10*60));
+        List<Carrito> carritos= carritoRepository.findCarritoUltimaInteraccion(Instant.now().minusSeconds(3*60));
         if (carritos==null || carritos.isEmpty()) {
             log.info("Job de recordatorio finalizado: no se encontraron carritos");
             return;

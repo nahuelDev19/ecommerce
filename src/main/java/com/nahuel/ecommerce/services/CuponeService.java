@@ -11,8 +11,9 @@ public interface CuponeService {
     List<CuponDto> listarCupones();
     List<CuponDto> listarCuponesPorEstadoActivo();
     List<CuponDto> listarCuponesPorEstadoDesactivo();
-    void eliminarCuporPorId(UUID id);
-    void eliminarDesactivos();
+    boolean eliminarCuponPorId(UUID id);
+    boolean eliminarDesactivos();
+    boolean desactivarCupon();
     CuponDto buscarCuponId(UUID id);
 
 

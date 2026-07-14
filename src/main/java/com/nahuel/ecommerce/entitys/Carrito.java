@@ -30,19 +30,14 @@ public class Carrito {
     private Usuario usuario;
 
 
-    @OneToMany(mappedBy = "carrito")
+    @OneToMany(mappedBy = "carrito", orphanRemoval = true, cascade = CascadeType.ALL)
     private Set<ItemCarrito> items = new HashSet<>();
 
-    //private BigDecimal subtotal;
-    //private BigDecimal descuentoTotal;
-    //private BigDecimal total;
     private Instant creadoEn;
     private Instant actualizadoEn;
     private Instant ultimaInteraccion;
 
-    /*
-    private String moneda;
-    private Set<ItemCarrito> itemCarritos;
-     */
 
+    //imp cupon unico o lista de cupones
+    //cupones usados : almacenar la cantidadad de cupones usados, usar map
 }

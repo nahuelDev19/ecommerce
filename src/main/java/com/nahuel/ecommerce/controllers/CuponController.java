@@ -36,20 +36,14 @@ public class CuponController {
         return ResponseEntity.ok(cuponeService.listarCuponesPorEstadoActivo());
     }
 
-    @GetMapping("/listar/desactivos")
+    @GetMapping("/listar/inactivos")
     public ResponseEntity<List<CuponDto>> listarCuponesPorEstadoDesactivo() {
         return ResponseEntity.ok(cuponeService.listarCuponesPorEstadoDesactivo());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarCuporPorId(@PathVariable UUID id) {
-        cuponeService.eliminarCuporPorId(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    @DeleteMapping("/eliminar/desactivos")
-    public ResponseEntity<Void> eliminarCuporPorDesactivos() {
-        cuponeService.eliminarDesactivos();
+        cuponeService.eliminarCuponPorId(id);
         return ResponseEntity.noContent().build();
     }
 
