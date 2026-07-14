@@ -73,43 +73,7 @@ public class ItemCarritoServiceImp implements ItemCarritoService{
         carrito.setUltimaInteraccion(Instant.now());
         return toDto(carrito);
     }
-/*
-    @Override
-    public CarritoDto disminuirItem(ItemRequestDto dto) {
 
-        usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        productoRepository.findById(dto.getProductoId())
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-
-        Carrito carrito = carritoRepository
-                .findByUsuarioIdAndEstadoCarrito(dto.getUsuarioId(), ACTIVO)
-                .orElseThrow(() -> new RuntimeException("Carrito no encontrado o inactivo"));
-
-        ItemCarrito item = itemCarritoRepository
-                .findByCarritoIdAndProductoId(carrito.getId(), dto.getProductoId())
-                .orElseThrow(() -> new RuntimeException("El producto no existe en el carrito"));
-
-        int nuevaCantidad = item.getCantidad() - dto.getCantidad();
-
-        if (nuevaCantidad == 0) {
-            carrito.getItems().remove(item);
-            itemCarritoRepository.delete(item);
-        }
-
-        item.setCantidad(nuevaCantidad);
-        itemCarritoRepository.save(item);
-
-        System.out.println(carrito.getItems());
-        carrito.setActualizadoEn(Instant.now());
-        carrito.setUltimaInteraccion(Instant.now());
-
-        carritoRepository.save(carrito);
-
-        return toDto(carrito);
-    }
-*/
 @Override
 public CarritoDto disminuirItem(ItemRequestDto dto) {
 
