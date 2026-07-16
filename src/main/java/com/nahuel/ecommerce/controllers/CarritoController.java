@@ -4,6 +4,7 @@ import com.nahuel.ecommerce.dtos.ItemRequestDto;
 import com.nahuel.ecommerce.dtos.CarritoDto;
 import com.nahuel.ecommerce.dtos.EliminarItemCarritoDto;
 import com.nahuel.ecommerce.services.CarritoService;
+import com.nahuel.ecommerce.services.CuponeService;
 import com.nahuel.ecommerce.services.ItemCarritoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ public class CarritoController {
 
     private final CarritoService carritoService;
     private final ItemCarritoService itemCarritoService;
+    private final CuponeService cuponeService;
 
     @PostMapping
     public CarritoDto guardar(@RequestBody CarritoDto dto) {
@@ -60,5 +62,15 @@ public class CarritoController {
     public void eliminar(@PathVariable UUID id) {
 
         carritoService.eliminar(id);
+    }
+
+
+    @PutMapping("/{idCarrito}/cupon/{codigo}")
+    public ResponseEntity<CarritoDto> aplicarCupon(@PathVariable UUID idCarrito, @PathVariable String codigo) {
+        return ResponseEntity.ok(cuponeService.aplicarCupon(idCarrito,codigo));
+    }
+    @PutMapping("/quitar/{idCarrito}/")
+    public ResponseEntity<CarritoDto> quitarCupon(@PathVariable UUID idCarrito) {
+        return ResponseEntity.ok(cuponeService.quitarCupon(idCarrito));
     }
 }

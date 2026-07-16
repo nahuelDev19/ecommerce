@@ -1,6 +1,8 @@
 package com.nahuel.ecommerce.controllers;
 
+import com.nahuel.ecommerce.dtos.CarritoDto;
 import com.nahuel.ecommerce.dtos.CuponDto;
+import com.nahuel.ecommerce.dtos.CuponDtoResponse;
 import com.nahuel.ecommerce.services.CuponeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,27 +19,28 @@ public class CuponController {
     private final CuponeService cuponeService;
 
     @PostMapping
-    public ResponseEntity<CuponDto> crearCupon(@RequestBody CuponDto dto) {
+    public ResponseEntity<CuponDtoResponse> crearCupon(@RequestBody CuponDto dto) {
         return ResponseEntity.ok(cuponeService.crearCupon(dto));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<CuponDto> buscarCuponId(@PathVariable UUID id) {
-        return ResponseEntity.ok(cuponeService.buscarCuponId(id));
-    }
-
     @GetMapping("/listar")
-    public ResponseEntity<List<CuponDto>> listarCupones() {
+    public ResponseEntity<List<CuponDtoResponse>> listarCupones() {
         return ResponseEntity.ok(cuponeService.listarCupones());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<CuponDtoResponse> buscarCuponId(@PathVariable UUID id) {
+        return ResponseEntity.ok(cuponeService.buscarCuponId(id));
+    }
+
+
     @GetMapping("/listar/activos")
-    public ResponseEntity<List<CuponDto>> listarCuponesPorEstadoActivo() {
+    public ResponseEntity<List<CuponDtoResponse>> listarCuponesPorEstadoActivo() {
         return ResponseEntity.ok(cuponeService.listarCuponesPorEstadoActivo());
     }
 
     @GetMapping("/listar/inactivos")
-    public ResponseEntity<List<CuponDto>> listarCuponesPorEstadoDesactivo() {
+    public ResponseEntity<List<CuponDtoResponse>> listarCuponesPorEstadoDesactivo() {
         return ResponseEntity.ok(cuponeService.listarCuponesPorEstadoDesactivo());
     }
 
@@ -46,5 +49,30 @@ public class CuponController {
         cuponeService.eliminarCuponPorId(id);
         return ResponseEntity.noContent().build();
     }
+
+    //----------------------------------------
+    @GetMapping("/{codigo}")
+    public ResponseEntity<CuponDtoResponse> buscarPorCodigo(@PathVariable String codigo) {
+        return ResponseEntity.ok(cuponeService.buscarPorCodigo(codigo));
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 }

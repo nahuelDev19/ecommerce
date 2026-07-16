@@ -33,6 +33,10 @@ public class Carrito {
     @OneToMany(mappedBy = "carrito", orphanRemoval = true, cascade = CascadeType.ALL)
     private Set<ItemCarrito> items = new HashSet<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cupon_id")
+    private Cupon cupon;
+
     private Instant creadoEn;
     private Instant actualizadoEn;
     private Instant ultimaInteraccion;
