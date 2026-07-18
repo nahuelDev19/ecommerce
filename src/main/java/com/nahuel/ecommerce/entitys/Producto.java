@@ -19,6 +19,7 @@ public class Producto {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(unique = true)
     private String nombre;
 
     private String descripcion;
@@ -35,6 +36,11 @@ public class Producto {
 
     private Instant fechaActualizacion;
 
-
-
+    public Producto(String nombre, String descripcion, BigDecimal precioBase, String moneda, Boolean activo) {
+        this.nombre = nombre;
+        this.descripcion = descripcion;
+        this.precioBase = precioBase;
+        this.moneda = moneda;
+        this.activo = activo;
+    }
 }

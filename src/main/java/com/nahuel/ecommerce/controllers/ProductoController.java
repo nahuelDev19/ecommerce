@@ -2,6 +2,7 @@ package com.nahuel.ecommerce.controllers;
 
 import com.nahuel.ecommerce.dtos.FiltrosBusquedaProductoDto;
 import com.nahuel.ecommerce.dtos.ProductoDto;
+import com.nahuel.ecommerce.pipeline.ProcesarArchivosService;
 import com.nahuel.ecommerce.services.ProductoServiceImp;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -10,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.awt.print.Pageable;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -21,6 +21,7 @@ import java.util.UUID;
 public class ProductoController {
 
     private final ProductoServiceImp productoService;
+    private final ProcesarArchivosService procesarArchivosService;
 
     @PostMapping
     public ResponseEntity<?> crearProducto(@RequestBody ProductoDto dto){
@@ -64,5 +65,12 @@ public class ProductoController {
     @PutMapping("/actualizar/{id}")
     public ResponseEntity<?> actualizarProducto(@PathVariable UUID id, ProductoDto dto){
         return ResponseEntity.ok(productoService.actualizarPorId(id,dto));
+    }
+
+    @PostMapping("/upload")
+    public ResponseEntity<?> upload(@RequestParam MultipartFile archivo) throws IOException {
+        //productoService.importar(archivo);
+        procesarArchivosService.procesarArchivo(archivo);
+        return ResponseEntity.ok().build();
     }
 }
