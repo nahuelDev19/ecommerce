@@ -30,7 +30,7 @@ public class Cupon {
     @Enumerated(EnumType.STRING)
     private TipoMoneda moneda;
     private BigDecimal montoMinimoCarrito;
-    private Integer limiteUsoPorUsuario=1;
+    private Integer limiteUsoPorUsuario;
     private String descripcion;
     @Column(nullable = false)
     private Instant iniciadoEn;

@@ -7,6 +7,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @NoArgsConstructor
@@ -22,5 +23,7 @@ public class CuponDto {
     private TipoMoneda moneda;
     private BigDecimal montoMinimoCarrito;
     private Integer limiteUsoPorUsuario;
+    private Instant iniciadoEn;
+    private Instant terminadoEn;
 
 }

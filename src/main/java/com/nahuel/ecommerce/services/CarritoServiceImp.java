@@ -1,7 +1,9 @@
 package com.nahuel.ecommerce.services;
 
+import com.nahuel.ecommerce.dtos.ItemCarritoDto;
 import com.nahuel.ecommerce.entitys.Carrito;
 import com.nahuel.ecommerce.dtos.CarritoDto;
+import com.nahuel.ecommerce.entitys.ItemCarrito;
 import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
@@ -14,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import static com.nahuel.ecommerce.services.CuponServiceImp.calcularDescuento;
 
 @RequiredArgsConstructor
 @Transactional
@@ -54,7 +58,7 @@ public class CarritoServiceImp implements CarritoService {
 
         carritoRepository.deleteById(id);
     }
-
+/*
     private CarritoDto toDto(Carrito carrito) {
 
         CarritoDto dto = new CarritoDto();
@@ -63,13 +67,38 @@ public class CarritoServiceImp implements CarritoService {
         dto.setEstadoCarrito(carrito.getEstadoCarrito());
         dto.setUsuarioId(carrito.getUsuario().getId());
 
-        dto.setItems(new ArrayList<>());
+        dto.setItems( dto.getItems() == null || dto.getItems().isEmpty() ?  new ArrayList<>(): dto.getItems() );
+        // dto.setSubtotal(BigDecimal.ZERO);
         dto.setSubtotal(BigDecimal.ZERO);
         dto.setDescuentoTotal(BigDecimal.ZERO);
         dto.setTotal(BigDecimal.ZERO);
 
         return dto;
     }
+*/
+
+    private CarritoDto toDto(Carrito carrito) {
+
+        CarritoDto dto = new CarritoDto();
+
+        dto.setId(carrito.getId());
+        dto.setEstadoCarrito(carrito.getEstadoCarrito());
+        dto.setUsuarioId(carrito.getUsuario().getId());
+        dto.setCreadoEn(carrito.getCreadoEn());
+        dto.setActualizadoEn(carrito.getActualizadoEn());
+        dto.setUltimaInteraccion(carrito.getUltimaInteraccion());
+        dto.setSubtotal(calcularTotal(carrito));
+        dto.setTotal(calcularDescuento(carrito,calcularTotal(carrito)));
+        dto.setItems(
+                carrito.getItems()
+                        .stream()
+                        .map(this::toDto)
+                        .toList()
+        );
+
+        return dto;
+    }
+
 
     private Carrito toEntity(CarritoDto dto) {
 
@@ -83,5 +112,28 @@ public class CarritoServiceImp implements CarritoService {
 
         return carrito;
 
+    }
+
+    private BigDecimal calcularTotal(Carrito carrito) {
+        return carrito.getItems().stream()
+                .map(item -> item.getPrecioUnitario()
+                        .multiply(BigDecimal.valueOf(item.getCantidad())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+
+    private ItemCarritoDto toDto(ItemCarrito item) {
+
+        ItemCarritoDto dto = new ItemCarritoDto();
+
+        dto.setId(item.getId());
+        dto.setProductoId(item.getProducto().getId());
+        dto.setNombreProducto(item.getProducto().getNombre());
+        dto.setPrecioUnitario(item.getPrecioUnitario());
+        dto.setCantidad(item.getCantidad());
+        dto.setSubtotal(item.getPrecioUnitario()
+                .multiply(BigDecimal.valueOf(item.getCantidad())));
+
+        return dto;
     }
 }

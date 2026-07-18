@@ -51,7 +51,7 @@ public class CuponController {
     }
 
     //----------------------------------------
-    @GetMapping("/{codigo}")
+    @GetMapping("/cupones/{codigo}")
     public ResponseEntity<CuponDtoResponse> buscarPorCodigo(@PathVariable String codigo) {
         return ResponseEntity.ok(cuponeService.buscarPorCodigo(codigo));
     }

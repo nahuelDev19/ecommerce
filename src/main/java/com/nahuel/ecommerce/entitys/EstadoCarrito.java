@@ -5,6 +5,7 @@ public enum EstadoCarrito {
     ACTIVO,
     ABANDONADO,
     ORDENADO,
-    EXPIRADO
+    EXPIRADO,
+    VACIO
 
 }

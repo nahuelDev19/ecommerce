@@ -99,7 +99,7 @@ public CarritoDto disminuirItem(ItemRequestDto dto) {
     }
 
     if (carrito.getItems().isEmpty()) {
-        carrito.setEstadoCarrito(ABANDONADO);
+            carrito.setEstadoCarrito(VACIO);
     }
 
     Instant ahora = Instant.now();
@@ -126,7 +126,7 @@ public CarritoDto disminuirItem(ItemRequestDto dto) {
         itemCarritoRepository.delete(item);
 
         if (carrito.getItems().isEmpty()) {
-            carrito.setEstadoCarrito(ABANDONADO);
+            carrito.setEstadoCarrito(VACIO);
         }
 
         Instant ahora = Instant.now();
@@ -148,6 +148,7 @@ public CarritoDto disminuirItem(ItemRequestDto dto) {
         dto.setActualizadoEn(carrito.getActualizadoEn());
         dto.setUltimaInteraccion(carrito.getUltimaInteraccion());
         dto.setTotal(calcularTotal(carrito));
+        dto.setSubtotal(calcularTotal(carrito));
 
         dto.setItems(
                 carrito.getItems()

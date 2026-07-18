@@ -36,6 +36,17 @@ public class CuponServiceImp implements CuponeService {
 
     @Override
     public CuponDtoResponse crearCupon(CuponDto dto) {
+
+        Instant inicio= dto.getIniciadoEn() == null ? dto.getIniciadoEn():Instant.now();
+        // validar para verificar que terminado en no sea null
+        // validar para asegurar que terminado en ocurra despues de inicio
+        // validar valor decuento para que no sea nulo o 0
+        // validar para asegurar que descuento del cupon no sea del 100% del valor total en porcentaje
+
+        cuponesRepository.findByCodigoCupon(dto.getCodigoCupon().toUpperCase()).ifPresent(cupon -> {
+            throw new RuntimeException("ya existe un cupon con este codigo");
+        });
+
         Cupon nuevoCupon = new Cupon(
                 dto.getCodigoCupon(),
                 dto.getDescripcion(),
@@ -46,9 +57,8 @@ public class CuponServiceImp implements CuponeService {
                 dto.getMoneda(),
                 dto.getMontoMinimoCarrito(),
                 dto.getLimiteUsoPorUsuario(),
-                Instant.now(),
-                Instant.now().plus(Duration.ofDays(1))
-
+                inicio,
+                dto.getTerminadoEn()
         );
 
         Cupon cuponGuardado = cuponesRepository.save(nuevoCupon);
@@ -85,18 +95,20 @@ public class CuponServiceImp implements CuponeService {
         Cupon cupon = cuponesRepository.findById(id)
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Cupon no encontrado: " + id));
         cuponesRepository.delete(cupon);
-        return false;
+        return true;
     }
 
     @Override
     public boolean eliminarDesactivos() {
         //cuponesRepository.deleteByActivoFalse();
-        return true;
+        List<Cupon> desactivados= cuponesRepository.findByEstadoCupon(DESACTIVO);
+        cuponesRepository.deleteAll(desactivados);
+        return !desactivados.isEmpty();
     }
 
     @Override
     public boolean desactivarCupon() {
-        return false;
+        return true;
     }
 
     @Override
@@ -116,17 +128,30 @@ public class CuponServiceImp implements CuponeService {
 
     @Override
     public CarritoDto aplicarCupon(UUID carritoId, String codigoCupon) {
-        Carrito carrito= carritoRepository.findById(carritoId).orElseThrow(()-> new RuntimeException("carrito no encontrado"));
-        Cupon cupon= cuponesRepository.findByCodigoCupon(codigoCupon).orElseThrow(()-> new RuntimeException("el cupon no fue encontrado"));
+        Carrito carrito= carritoRepository.findById(carritoId)
+                .orElseThrow(()-> new RuntimeException("carrito no encontrado"));
+        Cupon cupon= cuponesRepository.findByCodigoCupon(codigoCupon)
+                .orElseThrow(()-> new RuntimeException("el cupon no fue encontrado"));
+
+        // validar cupon (cupon, carrito) retorna exceptions si el cupon no es valido
         carrito.setCupon(cupon);
+        carrito.setUltimaInteraccion(Instant.now());
+
         carritoRepository.save(carrito);
         return toDto(carrito);
     }
+
+    private void validarCupon(Cupon cupon, Carrito carrito ){
+        Instant ahora = Instant.now();
+        // validar casos en los que el cupon se deberia considera invalido para esta aplicacion
+    }
+
 
     @Override
     public CarritoDto quitarCupon(UUID carritoId) {
         Carrito carrito= carritoRepository.findById(carritoId).orElseThrow(()-> new RuntimeException("carrito no encontrado"));
         carrito.setCupon(null);
+        carrito.setUltimaInteraccion(Instant.now());
         carritoRepository.save(carrito);
         return toDto(carrito);
     }
@@ -201,7 +226,7 @@ private CarritoDto toDto(Carrito carrito) {
     }
 
 
-    private BigDecimal calcularDescuento(Carrito carrito, BigDecimal subtotal) {
+    static BigDecimal calcularDescuento(Carrito carrito, BigDecimal subtotal) {
 
         if (carrito.getCupon() == null) {
             return BigDecimal.ZERO;
