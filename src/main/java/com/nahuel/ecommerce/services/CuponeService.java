@@ -15,7 +15,7 @@ public interface CuponeService {
     List<CuponDtoResponse> listarCuponesPorEstadoDesactivo();
     boolean eliminarCuponPorId(UUID id);
     boolean eliminarDesactivos();
-    boolean desactivarCupon();
+    boolean desactivarCupon(UUID id);
     CuponDtoResponse buscarCuponId(UUID id);
 
     CuponDtoResponse buscarPorCodigo(String codigo);

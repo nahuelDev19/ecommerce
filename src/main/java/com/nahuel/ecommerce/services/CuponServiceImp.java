@@ -4,10 +4,7 @@ import com.nahuel.ecommerce.dtos.CarritoDto;
 import com.nahuel.ecommerce.dtos.CuponDto;
 import com.nahuel.ecommerce.dtos.CuponDtoResponse;
 import com.nahuel.ecommerce.dtos.ItemCarritoDto;
-import com.nahuel.ecommerce.entitys.Carrito;
-import com.nahuel.ecommerce.entitys.Cupon;
-import com.nahuel.ecommerce.entitys.EstadoCupon;
-import com.nahuel.ecommerce.entitys.ItemCarrito;
+import com.nahuel.ecommerce.entitys.*;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.CuponesRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,15 +13,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.nahuel.ecommerce.entitys.EstadoCupon.ACTIVO;
 import static com.nahuel.ecommerce.entitys.EstadoCupon.DESACTIVO;
+import static com.nahuel.ecommerce.entitys.TipoDescuento.PORCENTAJE;
 
 @Transactional
 @Service
@@ -37,18 +33,34 @@ public class CuponServiceImp implements CuponeService {
     @Override
     public CuponDtoResponse crearCupon(CuponDto dto) {
 
-        Instant inicio= dto.getIniciadoEn() == null ? dto.getIniciadoEn():Instant.now();
-        // validar para verificar que terminado en no sea null
+        Instant inicio= dto.getIniciadoEn() == null ? Instant.now(): dto.getIniciadoEn();
+        // validar para verificar que terminadoEn en no sea null
+        if(dto.getTerminadoEn()==null){
+            throw new RuntimeException("Terminado en no puede ser null");
+        }
         // validar para asegurar que terminado en ocurra despues de inicio
+        if (dto.getTerminadoEn().compareTo(inicio) < 0) {
+            throw new RuntimeException("Terminado en no puede ser anterior a IniciadoEn");
+        }
         // validar valor decuento para que no sea nulo o 0
+        if(dto.getValorDescuento()==null || dto.getValorDescuento().compareTo(BigDecimal.ZERO)<=0 ){
+            throw new RuntimeException("El valor del descuento no puede ser 0  o menor a 0");
+        }
         // validar para asegurar que descuento del cupon no sea del 100% del valor total en porcentaje
+        if(dto.getTipoDescuento()== PORCENTAJE && dto.getValorDescuento().compareTo(BigDecimal.valueOf(99))>0){
+            throw new RuntimeException("El porcentaje del cupon no debe ser mayor o igual a 100%");
+        }
+
+        if(dto.getCodigoCupon()==null){
+            throw new RuntimeException("el codigo del cupon no debe ser nulo");
+        }
 
         cuponesRepository.findByCodigoCupon(dto.getCodigoCupon().toUpperCase()).ifPresent(cupon -> {
             throw new RuntimeException("ya existe un cupon con este codigo");
         });
 
         Cupon nuevoCupon = new Cupon(
-                dto.getCodigoCupon(),
+                dto.getCodigoCupon().toUpperCase(),
                 dto.getDescripcion(),
                 EstadoCupon.ACTIVO,
                 dto.getAlcanceCupon(),
@@ -107,7 +119,10 @@ public class CuponServiceImp implements CuponeService {
     }
 
     @Override
-    public boolean desactivarCupon() {
+    public boolean desactivarCupon(UUID id) {
+        Cupon cupon = cuponesRepository.findById(id).orElseThrow(()-> new RuntimeException("id del cupon no encontrado"));
+        cupon.setEstadoCupon(DESACTIVO);
+        cuponesRepository.save(cupon);
         return true;
     }
 
@@ -122,18 +137,20 @@ public class CuponServiceImp implements CuponeService {
 
     @Override
     public CuponDtoResponse buscarPorCodigo(String codigo) {
-        Cupon cupon= cuponesRepository.findByCodigoCupon(codigo.toUpperCase()).orElseThrow(()-> new RuntimeException("codigo no encontrado"));
+        Cupon cupon= cuponesRepository.findByCodigoCupon(codigo.toUpperCase())
+                .orElseThrow(()-> new RuntimeException("codigo no encontrado"));
         return cuponMapper(cupon);
     }
 
     @Override
-    public CarritoDto aplicarCupon(UUID carritoId, String codigoCupon) {
+    public CarritoDto aplicarCupon(UUID carritoId, String codCupon) {
         Carrito carrito= carritoRepository.findById(carritoId)
                 .orElseThrow(()-> new RuntimeException("carrito no encontrado"));
-        Cupon cupon= cuponesRepository.findByCodigoCupon(codigoCupon)
+        Cupon cupon= cuponesRepository.findByCodigoCupon(codCupon)
                 .orElseThrow(()-> new RuntimeException("el cupon no fue encontrado"));
 
-        // validar cupon (cupon, carrito) retorna exceptions si el cupon no es valido
+        validarAplicacionCupon(cupon,carrito);
+
         carrito.setCupon(cupon);
         carrito.setUltimaInteraccion(Instant.now());
 
@@ -141,9 +158,29 @@ public class CuponServiceImp implements CuponeService {
         return toDto(carrito);
     }
 
-    private void validarCupon(Cupon cupon, Carrito carrito ){
+    private void validarAplicacionCupon(Cupon cupon, Carrito carrito ){
         Instant ahora = Instant.now();
+        if (cupon.getEstadoCupon() != ACTIVO) {
+            throw new RuntimeException("El cupón no está activo");
+        }
+        if (ahora.isBefore(cupon.getIniciadoEn())) {
+            throw new RuntimeException("El cupón todavía no está vigente");
+        }
+        if (ahora.isAfter(cupon.getTerminaEn())) {
+            throw new RuntimeException("El cupón ha expirado");
+        }
+        if (carrito.getEstadoCarrito()==EstadoCarrito.ABANDONADO){
+            throw new RuntimeException("El Carrito esta Desactivado");
+        }
+        if (carrito.getEstadoCarrito()==EstadoCarrito.VACIO){
+            throw new RuntimeException("El Carrito esta Vacio");
+        }
+        if (carrito.getCupon()!=null){
+            throw new RuntimeException("El Carrito ya tiene un cupon aplicado");
+        }
+
         // validar casos en los que el cupon se deberia considera invalido para esta aplicacion
+
     }
 
 
@@ -173,23 +210,7 @@ public class CuponServiceImp implements CuponeService {
         resp.setTerminaEn(cupon.getTerminaEn());
         return resp;
     }
-/*
-    private CarritoDto toDto(Carrito carrito) {
 
-        CarritoDto dto = new CarritoDto();
-
-        dto.setId(carrito.getId());
-        dto.setEstadoCarrito(carrito.getEstadoCarrito());
-        dto.setUsuarioId(carrito.getUsuario().getId());
-
-        dto.setItems(new ArrayList<>());
-        dto.setSubtotal(BigDecimal.ZERO);
-        dto.setDescuentoTotal(BigDecimal.ZERO);
-        dto.setTotal(BigDecimal.ZERO );
-
-        return dto;
-    }
-*/
 private CarritoDto toDto(Carrito carrito) {
 
     CarritoDto dto = new CarritoDto();

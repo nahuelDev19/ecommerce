@@ -48,34 +48,15 @@ public class CarritoServiceImp implements CarritoService {
 
     @Override
     public Optional<CarritoDto> buscarPorId(UUID id) {
-
-        return carritoRepository.findById(id)
-                .map(this::toDto);
+        return Optional.ofNullable(carritoRepository.findById(id)
+                .map(this::toDto).orElseThrow(() -> new RuntimeException("Carrito no encontrado")));
     }
 
     @Override
     public void eliminar(UUID id) {
-
-        carritoRepository.deleteById(id);
+        Carrito carrito= carritoRepository.findById(id).orElseThrow(()-> new  RuntimeException("Carrito no encontrado"));
+        carritoRepository.delete(carrito);
     }
-/*
-    private CarritoDto toDto(Carrito carrito) {
-
-        CarritoDto dto = new CarritoDto();
-
-        dto.setId(carrito.getId());
-        dto.setEstadoCarrito(carrito.getEstadoCarrito());
-        dto.setUsuarioId(carrito.getUsuario().getId());
-
-        dto.setItems( dto.getItems() == null || dto.getItems().isEmpty() ?  new ArrayList<>(): dto.getItems() );
-        // dto.setSubtotal(BigDecimal.ZERO);
-        dto.setSubtotal(BigDecimal.ZERO);
-        dto.setDescuentoTotal(BigDecimal.ZERO);
-        dto.setTotal(BigDecimal.ZERO);
-
-        return dto;
-    }
-*/
 
     private CarritoDto toDto(Carrito carrito) {
 
