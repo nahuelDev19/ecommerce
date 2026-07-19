@@ -39,15 +39,17 @@ public class UsuarioServiceImp implements UsuarioService {
 
     @Override
     public Optional<UsuarioDto> buscarPorId(UUID id) {
-
-        return usuarioRepository.findById(id)
-                .map(this::toDto);
+        return Optional.of(
+                usuarioRepository.findById(id)
+                        .map(this::toDto)
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"))
+        );
     }
 
     @Override
     public void eliminar(UUID id) {
-
-        usuarioRepository.deleteById(id);
+        Usuario usuario= usuarioRepository.findById(id).orElseThrow(() -> new RuntimeException("usuario no encotrado"));
+        usuarioRepository.delete(usuario);
     }
 
     private UsuarioDto toDto(Usuario usuario) {
