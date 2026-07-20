@@ -18,36 +18,22 @@ public class ProcesarArchivosService {
 
     private final ProcesarExcelService excelProcessingService;
     private final ProductoRepository productoRepository;
-
+    private final LimpiezaDatosService limpiezaDatosService;
+    private final NormalizacionDatosService normalizacionDatosService;
+    private final TransformacionDatosService transformacionDatosService;
 
     public void procesarArchivo(MultipartFile file) throws IOException {
 
         List<ProductoExcelDto> listProductoDto = excelProcessingService.leerExcel(file);
-        List<Producto> listProduct= listProductoDto.stream().map(productoExcelDto -> {
-            return new Producto(
-                    productoExcelDto.getNombre(),
-                    productoExcelDto.getDescripcion(),
-                    new BigDecimal(productoExcelDto.getPrecio()),
-                    productoExcelDto.getMoneda(),
-                    Boolean.parseBoolean(productoExcelDto.getActivo())
-            );
-        }).toList();
+        List<ProductoExcelDto> listProductosFiltrados= limpiezaDatosService.limpiar(listProductoDto);
+        List<ProductoExcelDto> listProductosNormalizados= normalizacionDatosService.normalizar(listProductosFiltrados);
+        List<Producto> productosTransformados= transformacionDatosService.transformar(listProductosNormalizados);
 
-        creacionEntidadesJpaProductos(listProduct);
+        creacionEntidadesJpaProductos(productosTransformados);
     }
 
     private void creacionEntidadesJpaProductos(List<Producto> productos) {
-        for (Producto pro : productos) {
-            Producto productosEntitys = new Producto(
-                    pro.getNombre(),
-                    pro.getDescripcion(),
-                    pro.getPrecioBase(),
-                    pro.getMoneda(),
-                    pro.getActivo()
-            );
-            productosEntitys.setFechaCreacion(Instant.now());
-            productoRepository.save(productosEntitys);
-        }
+            productoRepository.saveAll(productos);
     }
 
 }

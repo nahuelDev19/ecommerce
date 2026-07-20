@@ -43,4 +43,13 @@ public class Producto {
         this.moneda = moneda;
         this.activo = activo;
     }
+
+    public Producto(String nombre, String descripcion, BigDecimal precioBase, String moneda, Boolean activo, Instant fechaCreacion) {
+        this.nombre = nombre;
+        this.descripcion = descripcion;
+        this.precioBase = precioBase;
+        this.moneda = moneda;
+        this.activo = activo;
+        this.fechaCreacion = fechaCreacion;
+    }
 }

@@ -19,22 +19,23 @@ public class ProductoDto {
 
     private UUID id;
 
-    @NotBlank(message = "")
-    @Size(max=150, message = "")
+    @NotBlank(message = "Nombre no puede ser vacio o tener espacios en blanco ")
+    @Size(max=150, message = "Nombre no puede superar los 150 caracteres")
     private String nombre;
 
-    @NotBlank
-    @Size(max=2000, message = "")
+    @NotBlank(message = "Descripcion no puede ser vacio o tener espacios en blanco ")
+    @Size(max=2000, message = "Descripcion no puede superar los 2000 caracteres")
     private String descripcion;
 
-    @NotNull
+    @NotNull(message = "Precio no puede ser null")
     @DecimalMin(value = "0.0", inclusive = false)
     private BigDecimal precioBase;
 
-    @NotBlank
+    @NotBlank(message = "Moneda no puede ser vacio o tener espacios en blanco ")
     @Size(min = 3, max = 3, message = "")
     private String moneda;
 
+    @NotNull(message = "Estado del carrito no puede ser nullo")
     private Boolean activo;
 
     private Instant fechaDescontinuado;
