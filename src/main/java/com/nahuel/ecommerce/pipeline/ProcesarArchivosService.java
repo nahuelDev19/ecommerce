@@ -33,7 +33,10 @@ public class ProcesarArchivosService {
     }
 
     private void creacionEntidadesJpaProductos(List<Producto> productos) {
-            productoRepository.saveAll(productos);
+        for (Producto pro : productos){
+        if(!productoRepository.existsByNombre(pro.getNombre()))
+            productoRepository.save(pro);
+        }
     }
 
 }

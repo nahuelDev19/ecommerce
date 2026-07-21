@@ -33,4 +33,7 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID> {
             @Param("soloActivo") boolean soloActivo,
             Pageable pageable
     );
+
+
+    boolean existsByNombre(String nombre);
 }
