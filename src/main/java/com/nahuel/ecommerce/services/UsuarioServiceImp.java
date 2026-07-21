@@ -4,6 +4,7 @@ import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.dtos.UsuarioDto;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import java.util.UUID;
 public class UsuarioServiceImp implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public UsuarioDto guardar(UsuarioDto dto) {
@@ -70,7 +72,7 @@ public class UsuarioServiceImp implements UsuarioService {
 
         usuario.setId(dto.getId());
         usuario.setNombreUsuario(dto.getNombreUsuario());
-        usuario.setContrasena(dto.getContrasena());
+        usuario.setContrasena(passwordEncoder.encode(dto.getContrasena()));
         usuario.setEmail(dto.getEmail());
 
         return usuario;
