@@ -8,7 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@NoArgsConstructor @AllArgsConstructor @Builder
 @Entity
 public class Usuario {
 
