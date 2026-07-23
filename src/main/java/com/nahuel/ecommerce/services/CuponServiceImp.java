@@ -172,9 +172,6 @@ public class CuponServiceImp implements CuponeService {
         if (carrito.getEstadoCarrito()==EstadoCarrito.ABANDONADO){
             throw new RuntimeException("El Carrito esta Desactivado");
         }
-        if (carrito.getEstadoCarrito()==EstadoCarrito.VACIO){
-            throw new RuntimeException("El Carrito esta Vacio");
-        }
         if (carrito.getCupon()!=null){
             throw new RuntimeException("El Carrito ya tiene un cupon aplicado");
         }
