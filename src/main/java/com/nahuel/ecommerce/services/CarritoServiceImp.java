@@ -60,6 +60,9 @@ public class CarritoServiceImp implements CarritoService {
 
     private CarritoDto toDto(Carrito carrito) {
 
+        BigDecimal montoDescuento= calcularDescuento(carrito,calcularTotal(carrito));
+        BigDecimal total= calcularTotal(carrito);
+        BigDecimal totalConDescuento=total.subtract(montoDescuento);
         CarritoDto dto = new CarritoDto();
 
         dto.setId(carrito.getId());
@@ -68,8 +71,9 @@ public class CarritoServiceImp implements CarritoService {
         dto.setCreadoEn(carrito.getCreadoEn());
         dto.setActualizadoEn(carrito.getActualizadoEn());
         dto.setUltimaInteraccion(carrito.getUltimaInteraccion());
-        dto.setSubtotal(calcularTotal(carrito));
-        dto.setTotal(calcularDescuento(carrito,calcularTotal(carrito)));
+        dto.setSubtotal(total);
+        dto.setDescuentoTotal(montoDescuento);
+        dto.setTotal(totalConDescuento);
         dto.setItems(
                 carrito.getItems()
                         .stream()
