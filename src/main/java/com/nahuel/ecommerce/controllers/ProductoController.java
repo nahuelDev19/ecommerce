@@ -2,6 +2,7 @@ package com.nahuel.ecommerce.controllers;
 
 import com.nahuel.ecommerce.dtos.FiltrosBusquedaProductoDto;
 import com.nahuel.ecommerce.dtos.ProductoDto;
+import com.nahuel.ecommerce.dtos.ResultadoImportacionDto;
 import com.nahuel.ecommerce.pipeline.ProcesarArchivosService;
 import com.nahuel.ecommerce.services.ProductoServiceImp;
 import lombok.RequiredArgsConstructor;
@@ -70,7 +71,7 @@ public class ProductoController {
     @PostMapping("/upload")
     public ResponseEntity<?> upload(@RequestParam MultipartFile archivo) throws IOException {
         //productoService.importar(archivo);
-        procesarArchivosService.procesarArchivo(archivo);
-        return ResponseEntity.ok().build();
+        ResultadoImportacionDto resultado=  procesarArchivosService.procesarArchivo(archivo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(resultado);
     }
 }

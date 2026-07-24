@@ -2,6 +2,7 @@ package com.nahuel.ecommerce.pipeline;
 
 import com.nahuel.ecommerce.dtos.ProductoDto;
 import com.nahuel.ecommerce.dtos.ProductoExcelDto;
+import com.nahuel.ecommerce.dtos.ResultadoImportacionDto;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,20 +12,25 @@ import java.util.stream.Collectors;
 
 @Service
 public class LimpiezaDatosService {
+    public List<ProductoExcelDto> limpiar(List<ProductoExcelDto> productos,
+                                          ResultadoImportacionDto resultado) {
 
-    public List<ProductoExcelDto> limpiar(List<ProductoExcelDto> dto){
-        return  dto.stream()
-                .filter(data -> data.getNombre() != null && !data.getNombre().isBlank())
+        List<ProductoExcelDto> productosLimpios = productos.stream()
+                .filter(this::esValido)
+                .toList();
 
-                .filter(data -> data.getPrecio() != null  &&  !data.getPrecio().isBlank())
+        resultado.setLineasProcesadas(productos.size());
+        resultado.setLineasDescartadasPorCamposVacios(productos.size() - productosLimpios.size());
 
-                .filter(data -> data.getMoneda() != null  && !data.getMoneda().isBlank())
-
-                .filter(data -> data.getDescripcion() != null && !data.getDescripcion().isBlank())
-
-                .filter(data -> data.getActivo() != null && !data.getActivo().isBlank())
-
-                .collect(Collectors.toList());
-
+        return productosLimpios;
     }
+
+    private boolean esValido(ProductoExcelDto data) {
+        return data.getNombre() != null && !data.getNombre().isBlank()
+                && data.getPrecio() != null && !data.getPrecio().isBlank()
+                && data.getMoneda() != null && !data.getMoneda().isBlank()
+                && data.getDescripcion() != null && !data.getDescripcion().isBlank()
+                && data.getActivo() != null && !data.getActivo().isBlank();
+    }
+
 }

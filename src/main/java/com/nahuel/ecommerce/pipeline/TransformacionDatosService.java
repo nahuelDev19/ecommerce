@@ -1,6 +1,7 @@
 package com.nahuel.ecommerce.pipeline;
 
 import com.nahuel.ecommerce.dtos.ProductoExcelDto;
+import com.nahuel.ecommerce.dtos.ResultadoImportacionDto;
 import com.nahuel.ecommerce.entitys.Producto;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +16,7 @@ import java.util.List;
 public class TransformacionDatosService {
 
 
-    public List<Producto> transformar(List<ProductoExcelDto> datos) {
+    public List<Producto> transformar(List<ProductoExcelDto> datos, ResultadoImportacionDto resultado) {
 
         List<Producto> lista = new ArrayList<>();
 
@@ -37,9 +38,8 @@ public class TransformacionDatosService {
                 lista.add(producto);
 
             } catch (RuntimeException e) {
-
-                System.out.println(
-                        "Producto " + dto.getNombre() + ": " + e.getMessage()
+                resultado.setLineasDescartadasPorFormatoInvalido(
+                        resultado.getLineasDescartadasPorFormatoInvalido() + 1
                 );
             }
         }

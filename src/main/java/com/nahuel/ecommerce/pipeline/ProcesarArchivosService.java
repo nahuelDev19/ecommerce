@@ -1,6 +1,7 @@
 package com.nahuel.ecommerce.pipeline;
 
 import com.nahuel.ecommerce.dtos.ProductoExcelDto;
+import com.nahuel.ecommerce.dtos.ResultadoImportacionDto;
 import com.nahuel.ecommerce.entitys.Producto;
 import com.nahuel.ecommerce.repositories.ProductoRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,21 +23,32 @@ public class ProcesarArchivosService {
     private final NormalizacionDatosService normalizacionDatosService;
     private final TransformacionDatosService transformacionDatosService;
 
-    public void procesarArchivo(MultipartFile file) throws IOException {
+    public ResultadoImportacionDto procesarArchivo(MultipartFile file) throws IOException {
+
+        ResultadoImportacionDto resultado = new ResultadoImportacionDto();
 
         List<ProductoExcelDto> listProductoDto = excelProcessingService.leerExcel(file);
-        List<ProductoExcelDto> listProductosFiltrados= limpiezaDatosService.limpiar(listProductoDto);
+        List<ProductoExcelDto> listProductosFiltrados= limpiezaDatosService.limpiar(listProductoDto, resultado);
         List<ProductoExcelDto> listProductosNormalizados= normalizacionDatosService.normalizar(listProductosFiltrados);
-        List<Producto> productosTransformados= transformacionDatosService.transformar(listProductosNormalizados);
+        List<Producto> productosTransformados= transformacionDatosService.transformar(listProductosNormalizados,resultado);
 
-        creacionEntidadesJpaProductos(productosTransformados);
+        creacionEntidadesJpaProductos(productosTransformados,resultado);
+        return resultado;
     }
 
-    private void creacionEntidadesJpaProductos(List<Producto> productos) {
-        for (Producto pro : productos){
-        if(!productoRepository.existsByNombre(pro.getNombre()))
-            productoRepository.save(pro);
+    private void creacionEntidadesJpaProductos(List<Producto> productos,ResultadoImportacionDto resultado) {
+        int importados=0;
+        for (Producto pro : productos) {
+            if (!productoRepository.existsByNombre(pro.getNombre())) {
+                productoRepository.save(pro);
+                importados++;
+            } else {
+                resultado.setLineasDescartadasPorDuplicados(
+                        resultado.getLineasDescartadasPorDuplicados() + 1
+                );
+            }
         }
+        resultado.setProductosImportados(importados);
     }
 
 }

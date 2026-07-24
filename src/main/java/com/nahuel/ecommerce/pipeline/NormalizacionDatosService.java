@@ -12,7 +12,7 @@ public class NormalizacionDatosService {
     public List<ProductoExcelDto> normalizar(List<ProductoExcelDto> datos) {
         for (ProductoExcelDto dto: datos ) {
 
-            dto.setNombre(dto.getNombre().toLowerCase().trim());
+            dto.setNombre(dto.getNombre().trim());
             dto.setDescripcion(dto.getDescripcion().toLowerCase().trim());
             dto.setMoneda(dto.getMoneda().toUpperCase().trim());
             dto.setActivo(dto.getActivo().toUpperCase().trim());
