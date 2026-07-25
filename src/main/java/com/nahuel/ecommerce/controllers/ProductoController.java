@@ -70,8 +70,17 @@ public class ProductoController {
 
     @PostMapping("/upload")
     public ResponseEntity<?> upload(@RequestParam MultipartFile archivo) throws IOException {
-        //productoService.importar(archivo);
+        if(archivo==null || archivo.isEmpty()){
+            throw new RuntimeException("El Archivo no puede ser nulo o vacio");
+        }
+        String nombre= archivo.getOriginalFilename();
+        if(nombre==null || (!nombre.endsWith(".xls") && !nombre.endsWith(".xlsx"))){
+            throw new RuntimeException("Formato de Archivo no valido, Formatos validos xlsx o xls");
+        }
+
+
         ResultadoImportacionDto resultado=  procesarArchivosService.procesarArchivo(archivo);
         return ResponseEntity.status(HttpStatus.CREATED).body(resultado);
+
     }
 }

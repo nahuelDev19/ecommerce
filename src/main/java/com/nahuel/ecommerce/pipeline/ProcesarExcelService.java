@@ -49,7 +49,7 @@ public class ProcesarExcelService {
             }
 
         }
-        catch (Exception e) {
+        catch (IOException e) {
             throw new RuntimeException("Error al procesar archivo Excel", e);
         }
 
@@ -110,9 +110,7 @@ public class ProcesarExcelService {
                 return String.valueOf(cell.getBooleanCellValue());
 
             case FORMULA:
-                return cell.getCellFormula();
-            // Alternativa profesional: evaluar fórmula con FormulaEvaluator
-
+                throw new RuntimeException("No se permiten fórmulas en el archivo Excel.");
             case BLANK:
                 return "";
 

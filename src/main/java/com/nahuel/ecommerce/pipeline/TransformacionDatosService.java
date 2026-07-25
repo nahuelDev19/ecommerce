@@ -1,5 +1,6 @@
 package com.nahuel.ecommerce.pipeline;
 
+import com.nahuel.ecommerce.dtos.ErrorImportacionDto;
 import com.nahuel.ecommerce.dtos.ProductoExcelDto;
 import com.nahuel.ecommerce.dtos.ResultadoImportacionDto;
 import com.nahuel.ecommerce.entitys.Producto;
@@ -39,8 +40,11 @@ public class TransformacionDatosService {
 
             } catch (RuntimeException e) {
                 resultado.setLineasDescartadasPorFormatoInvalido(
-                        resultado.getLineasDescartadasPorFormatoInvalido() + 1
-                );
+                        resultado.getLineasDescartadasPorFormatoInvalido() + 1);
+                resultado.getErrores().add(  new ErrorImportacionDto(
+                        dto.getNombre(),
+                        e.getMessage()
+                ) );
             }
         }
 
@@ -51,15 +55,6 @@ public class TransformacionDatosService {
     private void validarDatosCorrectos(ProductoExcelDto dto) {
         List<String> errores = new ArrayList<>();
 
-        // Nombre
-        if (dto.getNombre() == null || dto.getNombre().isBlank()) {
-            errores.add("El nombre es obligatorio");
-        }
-
-        // Descripción
-        if (dto.getDescripcion() == null || dto.getDescripcion().isBlank()) {
-            errores.add("La descripción es obligatoria");
-        }
 
         // Precio
         try {
@@ -68,7 +63,7 @@ public class TransformacionDatosService {
             if (precio.compareTo(BigDecimal.ZERO) <= 0) {
                 errores.add("El precio debe ser mayor a 0");
             }
-        } catch (NumberFormatException | NullPointerException e) {
+        } catch (NumberFormatException e) {
             errores.add("El precio debe contener un valor numérico válido");
         }
 
