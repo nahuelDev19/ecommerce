@@ -98,9 +98,7 @@ public CarritoDto disminuirItem(ItemRequestDto dto) {
         item.setCantidad(nuevaCantidad);
     }
 
-    if (carrito.getItems().isEmpty()) {
-            carrito.setEstadoCarrito(VACIO);
-    }
+
 
     Instant ahora = Instant.now();
     carrito.setActualizadoEn(ahora);
@@ -125,9 +123,7 @@ public CarritoDto disminuirItem(ItemRequestDto dto) {
         carrito.getItems().remove(item);
         itemCarritoRepository.delete(item);
 
-        if (carrito.getItems().isEmpty()) {
-            carrito.setEstadoCarrito(VACIO);
-        }
+
 
         Instant ahora = Instant.now();
         carrito.setActualizadoEn(ahora);
