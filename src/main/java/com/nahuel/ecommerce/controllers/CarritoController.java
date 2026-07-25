@@ -29,19 +29,19 @@ public class CarritoController {
     }
 
     @PostMapping("/agregar")
-    public ResponseEntity<?> agregarItemCarrito(@RequestBody ItemRequestDto dto){
+    public ResponseEntity<?> agregarItemCarrito(@Valid @RequestBody ItemRequestDto dto){
         CarritoDto carritoDto= itemCarritoService.agregarItem(dto);
         return ResponseEntity.ok(carritoDto);
     }
 
     @PostMapping("/disminuir")
-    public ResponseEntity<?> disminuirItemCarrito(@RequestBody ItemRequestDto dto){
+    public ResponseEntity<?> disminuirItemCarrito(@Valid @RequestBody ItemRequestDto dto){
         CarritoDto carritoDto= itemCarritoService.disminuirItem(dto);
         return ResponseEntity.ok(carritoDto);
     }
 
     @DeleteMapping("/eliminar/item")
-    public ResponseEntity<?> eliminarItemCarrito(@RequestBody EliminarItemCarritoDto dto){
+    public ResponseEntity<?> eliminarItemCarrito(@Valid @RequestBody EliminarItemCarritoDto dto){
         CarritoDto carritoDto= itemCarritoService.eliminarItem(dto);
         return ResponseEntity.ok(carritoDto);
     }
