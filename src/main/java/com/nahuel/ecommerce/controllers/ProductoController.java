@@ -57,11 +57,7 @@ public class ProductoController {
         return ResponseEntity.ok(productoService.listarDescontinuados());
     }
 
-    @PostMapping(value="/importar", consumes = "multipart/form-data")
-    public ResponseEntity<List<ProductoDto>> importarDesdeExcel(@RequestParam("archivo") MultipartFile file) throws IOException {
-        List<ProductoDto> listaCreados= productoService.cargarProductosDesdeExcel(file.getInputStream());
-        return ResponseEntity.status(HttpStatus.CREATED).body(listaCreados);
-    }
+
 
     @PutMapping("/actualizar/{id}")
     public ResponseEntity<?> actualizarProducto(@PathVariable UUID id, ProductoDto dto){
