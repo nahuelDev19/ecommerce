@@ -55,7 +55,8 @@ public class CuponServiceImp implements CuponeService {
             throw new RuntimeException("el codigo del cupon no debe ser nulo");
         }
 
-        cuponesRepository.findByCodigoCupon(dto.getCodigoCupon().toUpperCase()).ifPresent(cupon -> {
+        cuponesRepository.findByCodigoCupon(dto.getCodigoCupon().toUpperCase())
+                .ifPresent(cupon -> {
             throw new RuntimeException("ya existe un cupon con este codigo");
         });
 
