@@ -31,9 +31,7 @@ public class CarritoServiceImp implements CarritoService {
     public CarritoDto guardar(CarritoDto dto) {
 
         Carrito carrito = toEntity(dto);
-
         carrito = carritoRepository.save(carrito);
-
         return toDto(carrito);
     }
 

@@ -6,6 +6,7 @@ import com.nahuel.ecommerce.dtos.EliminarItemCarritoDto;
 import com.nahuel.ecommerce.services.CarritoService;
 import com.nahuel.ecommerce.services.CuponeService;
 import com.nahuel.ecommerce.services.ItemCarritoService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +24,7 @@ public class CarritoController {
     private final CuponeService cuponeService;
 
     @PostMapping
-    public CarritoDto guardar(@RequestBody CarritoDto dto) {
+    public CarritoDto guardar(@Valid @RequestBody CarritoDto dto) {
         return carritoService.guardar(dto);
     }
 
