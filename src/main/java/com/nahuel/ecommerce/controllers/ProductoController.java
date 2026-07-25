@@ -5,6 +5,7 @@ import com.nahuel.ecommerce.dtos.ProductoDto;
 import com.nahuel.ecommerce.dtos.ResultadoImportacionDto;
 import com.nahuel.ecommerce.pipeline.ProcesarArchivosService;
 import com.nahuel.ecommerce.services.ProductoServiceImp;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -25,7 +26,7 @@ public class ProductoController {
     private final ProcesarArchivosService procesarArchivosService;
 
     @PostMapping
-    public ResponseEntity<?> crearProducto(@RequestBody ProductoDto dto){
+    public ResponseEntity<?> crearProducto(@Valid @RequestBody ProductoDto dto){
         ProductoDto ndto=productoService.guardarProducto(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(ndto);
     }
@@ -42,7 +43,7 @@ public class ProductoController {
     }
 
     @GetMapping("/filtrados")
-    public ResponseEntity<Page<ProductoDto>> buscarProductoFiltro(@ModelAttribute FiltrosBusquedaProductoDto dto) {
+    public ResponseEntity<Page<ProductoDto>> buscarProductoFiltro(@Valid @ModelAttribute FiltrosBusquedaProductoDto dto) {
         return ResponseEntity.ok(productoService.buscarProductos(dto));
     }
 
@@ -60,7 +61,7 @@ public class ProductoController {
 
 
     @PutMapping("/actualizar/{id}")
-    public ResponseEntity<?> actualizarProducto(@PathVariable UUID id, ProductoDto dto){
+    public ResponseEntity<?> actualizarProducto(@Valid @RequestBody ProductoDto dto,@PathVariable UUID id){
         return ResponseEntity.ok(productoService.actualizarPorId(id,dto));
     }
 
