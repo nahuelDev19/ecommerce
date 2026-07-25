@@ -6,14 +6,19 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-  sql:
-    init:
-      mode: always
+      ddl-auto: validate      # con Flyway; nunca 'update' en producción
+    show-sql: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${SUPABASE_URL}/auth/v1/.well-known/jwks.json
+          issuer-uri: ${SUPABASE_URL}/auth/v1
+          audiences: authenticated
+
+supabase:
+  url: ${SUPABASE_URL}                    # https://xxxx.supabase.co
+  service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
 
 server:
   port: ${PORT:8080}
