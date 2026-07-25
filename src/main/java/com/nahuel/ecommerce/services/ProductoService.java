@@ -18,8 +18,6 @@ public interface ProductoService {
 
     ProductoDto actualizarPorId(UUID id, ProductoDto dto);
 
-    // Carga masiva: Excel -> lista de productos guardados
-    List<ProductoDto> cargarProductosDesdeExcel(InputStream excelStream);
 
     // Búsqueda paginada con filtros
     Page<ProductoDto> buscarProductos(FiltrosBusquedaProductoDto dto);

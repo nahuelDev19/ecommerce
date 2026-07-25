@@ -63,10 +63,7 @@ public class ProductoServiceImp implements ProductoService {
         return convertirProductoDTO(actualizado);
     }
 
-    @Override
-    public List<ProductoDto> cargarProductosDesdeExcel(InputStream excelStream) {
-        return List.of();
-    }
+
 
     @Override
     public Page<ProductoDto> buscarProductos(FiltrosBusquedaProductoDto dto) {
