@@ -18,7 +18,6 @@ spring:
 
 supabase:
   url: ${SUPABASE_URL}                    # https://xxxx.supabase.co
-  service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
 
 server:
   port: ${PORT:8080}

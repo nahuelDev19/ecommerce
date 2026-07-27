@@ -72,7 +72,6 @@ public class UsuarioServiceImp implements UsuarioService {
 
         usuario.setId(dto.getId());
         usuario.setNombreUsuario(dto.getNombreUsuario());
-        usuario.setContrasena(passwordEncoder.encode(dto.getContrasena()));
         usuario.setEmail(dto.getEmail());
 
         return usuario;
