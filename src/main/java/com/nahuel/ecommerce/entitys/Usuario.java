@@ -21,6 +21,7 @@ public class Usuario {
     private String nombreUsuario;
     private String contrasena;
     private String email;
+    private Boolean activo;
 
     @Enumerated(EnumType.STRING)
     private Rol rol;
