@@ -68,6 +68,7 @@ public class AuthService {
 
     public TokenResponseDto loguear(LoginRequestDto request){
 
+
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -79,6 +80,7 @@ public class AuthService {
             throw new BadCredentialsException("username o password incorrectos");
         }
         Usuario usuario= usuarioRepository.findByEmail(normalizarEmail(request.getEmail())).orElseThrow();
+        verificarUsuarioActivo(usuario);
         return construirRespuesta(usuario);
 
     }
