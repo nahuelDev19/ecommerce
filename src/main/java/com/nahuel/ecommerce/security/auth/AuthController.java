@@ -1,5 +1,6 @@
 package com.nahuel.ecommerce.security.auth;
 
+import com.nahuel.ecommerce.security.auth.dto.GoogleLoginRequestDto;
 import com.nahuel.ecommerce.security.auth.dto.LoginRequestDto;
 import com.nahuel.ecommerce.security.auth.dto.RegistroRequestDto;
 import com.nahuel.ecommerce.security.auth.dto.TokenResponseDto;
@@ -24,6 +25,15 @@ public class AuthController {
 
 
     private final AuthService authService;
+
+    @PostMapping("/oauth")
+    public ResponseEntity<TokenResponseDto> loginOAuth(
+            @Valid @RequestBody GoogleLoginRequestDto request) {
+
+        return ResponseEntity.ok(
+                authService.loginOAuth(request.tokenSupabase())
+        );
+    }
 
 
     @PostMapping("/register")

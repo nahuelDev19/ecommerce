@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Service
@@ -63,11 +64,6 @@ public class AuthService {
         String sub = jwt.getSubject();
 
         Map<String, Object> appMetadata = jwt.getClaim("app_metadata");
-        //String provider = (String) appMetadata.get("provider");
-
-        // provider = google
-
-        // 3. Buscar usuario
         Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
 
         Usuario usuario;
@@ -78,7 +74,7 @@ public class AuthService {
             usuario = Usuario.builder()
                     .email(email)
                     .origenRegistro(OrigenRegistro.GOOGLE)
-                    //.supabaseID(sub) ?????????
+                    //.supabaseId(sub)
                     .rol(Rol.CLIENTE)
                     .build();
 
