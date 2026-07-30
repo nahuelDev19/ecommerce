@@ -26,4 +26,7 @@ public class Usuario {
     @Enumerated(EnumType.STRING)
     private Rol rol;
 
+
+    private UUID supabaseID;
+    private OrigenRegistro origenRegistro;
 }
