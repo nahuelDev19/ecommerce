@@ -28,5 +28,6 @@ public class Usuario {
 
 
     private UUID supabaseID;
+    @Enumerated(EnumType.STRING)
     private OrigenRegistro origenRegistro;
 }

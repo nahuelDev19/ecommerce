@@ -1,11 +1,13 @@
 package com.nahuel.ecommerce.security.auth;
 
 import com.nahuel.ecommerce.dtos.UsuarioDto;
+import com.nahuel.ecommerce.entitys.OrigenRegistro;
 import com.nahuel.ecommerce.entitys.Rol;
 import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.repositories.RefreshTokenRepository;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import com.nahuel.ecommerce.security.JwtService;
+import com.nahuel.ecommerce.security.SupabaseTokenVerifier;
 import com.nahuel.ecommerce.security.auth.dto.LoginRequestDto;
 import com.nahuel.ecommerce.security.auth.dto.RegistroRequestDto;
 import com.nahuel.ecommerce.security.auth.dto.TokenResponseDto;
@@ -17,9 +19,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -44,9 +48,45 @@ public class AuthService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final SupabaseTokenVerifier supabaseTokenVerifier;
+    //private final RefreshTokenRepository refreshTokenRepository;
     //private final RefreshTokenService refreshTokenService;
 
+
+    public TokenResponseDto loginOAuth(String tokenSupabase) {
+
+        // 1. Validar el JWT de Supabase
+        Jwt jwt = supabaseTokenVerifier.verificar(tokenSupabase);
+
+        // 2. Obtener datos
+        String email = normalizarEmail(jwt.getClaimAsString("email"));
+        String sub = jwt.getSubject();
+
+        Map<String, Object> appMetadata = jwt.getClaim("app_metadata");
+        //String provider = (String) appMetadata.get("provider");
+
+        // provider = google
+
+        // 3. Buscar usuario
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
+
+        Usuario usuario;
+
+        if (usuarioOpt.isPresent()) {
+            usuario = usuarioOpt.get();
+        } else {
+            usuario = Usuario.builder()
+                    .email(email)
+                    .origenRegistro(OrigenRegistro.GOOGLE)
+                    //.supabaseID(sub) ?????????
+                    .rol(Rol.CLIENTE)
+                    .build();
+
+            usuario = usuarioRepository.save(usuario);
+        }
+
+        return construirRespuesta(usuario);
+    }
 
     public TokenResponseDto registrar(RegistroRequestDto request){
         Usuario usuario= Usuario.builder()
@@ -59,7 +99,7 @@ public class AuthService {
         if (usuarioOpt.isPresent()){
             throw new RuntimeException("el usuario ya se encuenta registrado");
         }
-
+        usuario.setOrigenRegistro(OrigenRegistro.LOCAL);
         Usuario usuarioGuardado= usuarioRepository.save(usuario);
 
         return construirRespuesta(usuarioGuardado);
