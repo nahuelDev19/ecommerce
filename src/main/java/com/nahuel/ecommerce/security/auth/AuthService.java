@@ -87,6 +87,8 @@ public class AuthService {
     public TokenResponseDto registrar(RegistroRequestDto request){
         Usuario usuario= Usuario.builder()
                 .email(normalizarEmail(request.getEmail()))
+                .nombreUsuario(request.getNombreUsuario())
+                .activo(true)
                 .rol(Rol.CLIENTE)
                 .contrasena(passwordEncoder.encode(request.getContrasena()))
                 .build();
