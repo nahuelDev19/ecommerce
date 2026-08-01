@@ -59,8 +59,11 @@ public class AuthService {
         // 1. Validar el JWT de Supabase
         Jwt jwt = supabaseTokenVerifier.verificar(tokenSupabase);
 
-        // 2. Obtener datos
-        String email = normalizarEmail(jwt.getClaimAsString("email"));
+        String emailCrudo = jwt.getClaimAsString("email");
+        if (emailCrudo == null || emailCrudo.isBlank()) {
+            throw new BadCredentialsException("el token de supabase no contiene email");
+        }
+        String email = normalizarEmail(emailCrudo);
         String sub = jwt.getSubject();
 
         Map<String, Object> appMetadata = jwt.getClaim("app_metadata");
@@ -76,6 +79,7 @@ public class AuthService {
                     .origenRegistro(OrigenRegistro.GOOGLE)
                     //.supabaseId(sub)
                     .rol(Rol.CLIENTE)
+                    .activo(true)
                     .build();
 
             usuario = usuarioRepository.save(usuario);
