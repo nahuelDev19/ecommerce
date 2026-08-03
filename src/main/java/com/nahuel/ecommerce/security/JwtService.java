@@ -31,10 +31,10 @@ public class JwtService {
      */
 
 
-    @Value("${jwt.secret}")
+    @Value("${JWT.SECRET}")
     private String secretKey;
 
-    @Value("${jwt.expiration}")
+    @Value("${JWT.EXPIRATION}")
     private Long expiration;
 
     public String generateToken(Usuario usuario) {
