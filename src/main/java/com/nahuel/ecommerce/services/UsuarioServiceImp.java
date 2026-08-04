@@ -2,6 +2,7 @@ package com.nahuel.ecommerce.services;
 
 import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.dtos.UsuarioDto;
+import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -42,13 +43,14 @@ public class UsuarioServiceImp implements UsuarioService {
         return Optional.of(
                 usuarioRepository.findById(id)
                         .map(this::toDto)
-                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"))
+                        .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"))
         );
     }
 
     @Override
     public void eliminar(UUID id) {
-        Usuario usuario= usuarioRepository.findById(id).orElseThrow(() -> new RuntimeException("usuario no encotrado"));
+        Usuario usuario= usuarioRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("usuario no encotrado"));
         usuarioRepository.delete(usuario);
     }
 
@@ -56,7 +58,6 @@ public class UsuarioServiceImp implements UsuarioService {
 
         UsuarioDto dto = new UsuarioDto();
 
-        dto.setId(usuario.getId());
         dto.setNombreUsuario(usuario.getNombreUsuario());
         dto.setEmail(usuario.getEmail());
 
@@ -68,7 +69,6 @@ public class UsuarioServiceImp implements UsuarioService {
 
         Usuario usuario = new Usuario();
 
-        usuario.setId(dto.getId());
         usuario.setNombreUsuario(dto.getNombreUsuario());
         usuario.setContrasena(dto.getContrasena());
         usuario.setEmail(dto.getEmail());
