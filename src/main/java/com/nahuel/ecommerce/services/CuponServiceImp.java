@@ -5,6 +5,7 @@ import com.nahuel.ecommerce.dtos.CuponDto;
 import com.nahuel.ecommerce.dtos.CuponDtoResponse;
 import com.nahuel.ecommerce.dtos.ItemCarritoDto;
 import com.nahuel.ecommerce.entitys.*;
+import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.CuponesRepository;
 import lombok.RequiredArgsConstructor;
@@ -106,7 +107,7 @@ public class CuponServiceImp implements CuponeService {
     @Override
     public boolean eliminarCuponPorId(UUID id) {
         Cupon cupon = cuponesRepository.findById(id)
-                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Cupon no encontrado: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cupon no encontrado: " + id));
         cuponesRepository.delete(cupon);
         return true;
     }
@@ -121,7 +122,7 @@ public class CuponServiceImp implements CuponeService {
 
     @Override
     public boolean desactivarCupon(UUID id) {
-        Cupon cupon = cuponesRepository.findById(id).orElseThrow(()-> new RuntimeException("id del cupon no encontrado"));
+        Cupon cupon = cuponesRepository.findById(id).orElseThrow(()-> new RecursoNoEncontradoException("id del cupon no encontrado"));
         cupon.setEstadoCupon(DESACTIVO);
         cuponesRepository.save(cupon);
         return true;
@@ -130,7 +131,7 @@ public class CuponServiceImp implements CuponeService {
     @Override
     public CuponDtoResponse buscarCuponId(UUID id) {
         Cupon cupon = cuponesRepository.findById(id)
-                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Cupon no encontrado: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cupon no encontrado: " + id));
         return cuponMapper(cupon);
     }
 
@@ -139,16 +140,16 @@ public class CuponServiceImp implements CuponeService {
     @Override
     public CuponDtoResponse buscarPorCodigo(String codigo) {
         Cupon cupon= cuponesRepository.findByCodigoCupon(codigo.toUpperCase())
-                .orElseThrow(()-> new RuntimeException("codigo no encontrado"));
+                .orElseThrow(()-> new RecursoNoEncontradoException("codigo no encontrado"));
         return cuponMapper(cupon);
     }
 
     @Override
     public CarritoDto aplicarCupon(UUID carritoId, String codCupon) {
         Carrito carrito= carritoRepository.findById(carritoId)
-                .orElseThrow(()-> new RuntimeException("carrito no encontrado"));
+                .orElseThrow(()-> new RecursoNoEncontradoException("carrito no encontrado"));
         Cupon cupon= cuponesRepository.findByCodigoCupon(codCupon)
-                .orElseThrow(()-> new RuntimeException("el cupon no fue encontrado"));
+                .orElseThrow(()-> new RecursoNoEncontradoException("el cupon no fue encontrado"));
 
         validarAplicacionCupon(cupon,carrito);
 

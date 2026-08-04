@@ -5,6 +5,7 @@ import com.nahuel.ecommerce.entitys.Carrito;
 import com.nahuel.ecommerce.dtos.CarritoDto;
 import com.nahuel.ecommerce.entitys.ItemCarrito;
 import com.nahuel.ecommerce.entitys.Usuario;
+import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -47,12 +48,13 @@ public class CarritoServiceImp implements CarritoService {
     @Override
     public Optional<CarritoDto> buscarPorId(UUID id) {
         return Optional.ofNullable(carritoRepository.findById(id)
-                .map(this::toDto).orElseThrow(() -> new RuntimeException("Carrito no encontrado")));
+                .map(this::toDto).orElseThrow(() -> new RecursoNoEncontradoException("Carrito no encontrado")));
     }
 
     @Override
     public void eliminar(UUID id) {
-        Carrito carrito= carritoRepository.findById(id).orElseThrow(()-> new  RuntimeException("Carrito no encontrado"));
+        Carrito carrito= carritoRepository.findById(id)
+                .orElseThrow(()-> new RecursoNoEncontradoException("Carrito no encontrado"));
         carritoRepository.delete(carrito);
     }
 
@@ -86,7 +88,7 @@ public class CarritoServiceImp implements CarritoService {
     private Carrito toEntity(CarritoDto dto) {
 
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
 
         Carrito carrito = new Carrito();
 

@@ -8,6 +8,7 @@ import com.nahuel.ecommerce.entitys.Carrito;
 import com.nahuel.ecommerce.entitys.ItemCarrito;
 import com.nahuel.ecommerce.entitys.Producto;
 import com.nahuel.ecommerce.entitys.Usuario;
+import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.ItemCarritoRepository;
 import com.nahuel.ecommerce.repositories.ProductoRepository;
@@ -83,11 +84,11 @@ public CarritoDto disminuirItem(ItemRequestDto dto) {
 
     Carrito carrito = carritoRepository
             .findByUsuarioIdAndEstadoCarrito(dto.getUsuarioId(), ACTIVO)
-            .orElseThrow(() -> new RuntimeException("Carrito no encontrado o inactivo"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Carrito no encontrado o inactivo"));
 
     ItemCarrito item = itemCarritoRepository
             .findByCarritoIdAndProductoId(carrito.getId(), dto.getProductoId())
-            .orElseThrow(() -> new RuntimeException("El producto no existe en el carrito"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("El producto no existe en el carrito"));
 
     int nuevaCantidad = item.getCantidad() - dto.getCantidad();
 
@@ -114,11 +115,11 @@ public CarritoDto disminuirItem(ItemRequestDto dto) {
 
         Carrito carrito = carritoRepository
                 .findByUsuarioIdAndEstadoCarrito(dto.getUsuarioId(), ACTIVO)
-                .orElseThrow(() -> new RuntimeException("Carrito no encontrado o inactivo"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Carrito no encontrado o inactivo"));
 
         ItemCarrito item = itemCarritoRepository
                 .findByCarritoIdAndProductoId(carrito.getId(), dto.getProductoId())
-                .orElseThrow(() -> new RuntimeException("El producto no existe en el carrito"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("El producto no existe en el carrito"));
 
         carrito.getItems().remove(item);
         itemCarritoRepository.delete(item);
