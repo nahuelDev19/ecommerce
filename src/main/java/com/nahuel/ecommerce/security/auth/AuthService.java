@@ -172,8 +172,8 @@ public class AuthService {
         }
     }
 
-    private String obtenerNombreDesdeToken(String token) {
-        return jwtService.extractUsername(token);
+    private String obtenerIdDesdeToken(String token) {
+        return jwtService.extractSubject(token);
     }
 
     private UsuarioDto toDto(Usuario usuario) {
