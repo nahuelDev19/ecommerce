@@ -65,6 +65,16 @@ public class AuthService {
         }
         String email = normalizarEmail(emailCrudo);
         String sub = jwt.getSubject();
+        if (sub == null || sub.isBlank()) {
+            throw new BadCredentialsException("El token de Supabase no contiene subject");
+        }
+
+        UUID supabaseId ;
+        try {
+        supabaseId= UUID.fromString(jwt.getSubject());
+        }catch (IllegalArgumentException e) {
+            throw new BadCredentialsException("El subject de Supabase no es un UUID válido");
+        }
 
         Map<String, Object> appMetadata = jwt.getClaim("app_metadata");
         Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
@@ -77,7 +87,7 @@ public class AuthService {
             usuario = Usuario.builder()
                     .email(email)
                     .origenRegistro(OrigenRegistro.GOOGLE)
-                    //.supabaseId(sub)
+                    .supabaseId(supabaseId)
                     .rol(Rol.CLIENTE)
                     .activo(true)
                     .build();

@@ -40,15 +40,14 @@ public class JwtService {
     public String generateToken(Usuario usuario) {
 
         return Jwts.builder()
-                .subject(usuario.getEmail())
-                .claim("id", usuario.getId())
-                .claim("rol", usuario.getRol().name())
+                .subject(usuario.getId().toString())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSignKey())
                 .compact();
     }
 
+   /*
     public String generateToken( UserDetails userDetails){
         return generateToken(new HashMap<>(),userDetails);
     }
@@ -61,6 +60,8 @@ public class JwtService {
                 .signWith(getSignKey())
                 .compact();
     }
+
+    */
 
     private SecretKey getSignKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
@@ -79,7 +80,7 @@ public class JwtService {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
-    public String extractUsername(String token) {
+    public String extractSubject(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
@@ -91,9 +92,9 @@ public class JwtService {
         return extractExpiration(token).before(new Date());
     }
 
-    public boolean isTokenValid(String token,UserDetails userDetails) {
-        final String username= extractUsername(token);
-        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+    public boolean isTokenValid(String token,Usuario usuario) {
+        final String subjectId= extractSubject(token);
+        return subjectId.equals(usuario.getId().toString()) && !isTokenExpired(token);
 
     }
 

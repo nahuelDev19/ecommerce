@@ -1,5 +1,7 @@
 package com.nahuel.ecommerce.security;
 
+import com.nahuel.ecommerce.entitys.Usuario;
+import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Component @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
@@ -22,6 +25,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final UsuarioRepository usuarioRepository;
 
 
     @Override
@@ -36,19 +40,23 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         final String jwt = authHeader.substring(7);
-        final String username;
+        final UUID id;
         try {
-            username = jwtService.extractUsername(jwt);
+            id = UUID.fromString(jwtService.extractSubject(jwt));
 
         } catch (JwtException | IllegalArgumentException e) {
         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido o expirado");
         return;
     }
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        if (id != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            Usuario usuario= usuarioRepository.findById(id).orElseThrow(()-> new  RuntimeException("Usuario no encontrado"));
 
-            if (jwtService.isTokenValid(jwt, userDetails)) {
+            UserDetails userDetails =
+                    userDetailsService.loadUserByUsername(usuario.getEmail());
+
+
+            if (jwtService.isTokenValid(jwt, usuario)) {
 
 
                 UsernamePasswordAuthenticationToken authToken =
