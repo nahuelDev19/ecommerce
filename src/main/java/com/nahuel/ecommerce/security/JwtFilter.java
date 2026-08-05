@@ -9,6 +9,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -39,10 +40,10 @@ public class JwtFilter extends OncePerRequestFilter {
         try {
             username = jwtService.extractUsername(jwt);
 
-        }catch (Exception e){
-            filterChain.doFilter(request,response);
-            return;
-        }
+        } catch (JwtException | IllegalArgumentException e) {
+        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido o expirado");
+        return;
+    }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
@@ -61,6 +62,12 @@ public class JwtFilter extends OncePerRequestFilter {
 
 
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+            } else {
+                response.sendError(
+                        HttpServletResponse.SC_UNAUTHORIZED,
+                        "Token inválido"
+                );
+                return;
             }
         }
         filterChain.doFilter(request, response);
