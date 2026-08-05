@@ -5,7 +5,7 @@ import com.nahuel.ecommerce.dtos.CuponDto;
 import com.nahuel.ecommerce.dtos.CuponDtoResponse;
 import com.nahuel.ecommerce.dtos.ItemCarritoDto;
 import com.nahuel.ecommerce.entitys.*;
-import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
+import com.nahuel.ecommerce.exceptions.*;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.CuponesRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,30 +35,20 @@ public class CuponServiceImp implements CuponeService {
     public CuponDtoResponse crearCupon(CuponDto dto) {
 
         Instant inicio= dto.getIniciadoEn() == null ? Instant.now(): dto.getIniciadoEn();
-        // validar para verificar que terminadoEn en no sea null
-        if(dto.getTerminadoEn()==null){
-            throw new RuntimeException("Terminado en no puede ser null");
-        }
+
         // validar para asegurar que terminado en ocurra despues de inicio
         if (dto.getTerminadoEn().compareTo(inicio) < 0) {
-            throw new RuntimeException("Terminado en no puede ser anterior a IniciadoEn");
-        }
-        // validar valor decuento para que no sea nulo o 0
-        if(dto.getValorDescuento()==null || dto.getValorDescuento().compareTo(BigDecimal.ZERO)<=0 ){
-            throw new RuntimeException("El valor del descuento no puede ser 0  o menor a 0");
-        }
-        // validar para asegurar que descuento del cupon no sea del 100% del valor total en porcentaje
-        if(dto.getTipoDescuento()== PORCENTAJE && dto.getValorDescuento().compareTo(BigDecimal.valueOf(99))>0){
-            throw new RuntimeException("El porcentaje del cupon no debe ser mayor o igual a 100%");
+            throw new ReglaNegocioException("Terminado en no puede ser anterior a IniciadoEn");
         }
 
-        if(dto.getCodigoCupon()==null){
-            throw new RuntimeException("el codigo del cupon no debe ser nulo");
+        // validar para asegurar que descuento del cupon no sea del 100% del valor total en porcentaje
+        if(dto.getTipoDescuento()== PORCENTAJE && dto.getValorDescuento().compareTo(BigDecimal.valueOf(99))>0){
+            throw new ReglaNegocioException("El porcentaje del cupon no debe ser mayor o igual a 100%");
         }
 
         cuponesRepository.findByCodigoCupon(dto.getCodigoCupon().toUpperCase())
                 .ifPresent(cupon -> {
-            throw new RuntimeException("ya existe un cupon con este codigo");
+            throw new CuponYaExisteException(cupon.getCodigoCupon());
         });
 
         Cupon nuevoCupon = new Cupon(
@@ -148,7 +138,7 @@ public class CuponServiceImp implements CuponeService {
     public CarritoDto aplicarCupon(UUID carritoId, String codCupon) {
         Carrito carrito= carritoRepository.findById(carritoId)
                 .orElseThrow(()-> new RecursoNoEncontradoException("carrito no encontrado"));
-        Cupon cupon= cuponesRepository.findByCodigoCupon(codCupon)
+        Cupon cupon= cuponesRepository.findByCodigoCupon(codCupon.toUpperCase())
                 .orElseThrow(()-> new RecursoNoEncontradoException("el cupon no fue encontrado"));
 
         validarAplicacionCupon(cupon,carrito);
@@ -163,19 +153,19 @@ public class CuponServiceImp implements CuponeService {
     private void validarAplicacionCupon(Cupon cupon, Carrito carrito ){
         Instant ahora = Instant.now();
         if (cupon.getEstadoCupon() != ACTIVO) {
-            throw new RuntimeException("El cupón no está activo");
+            throw new CuponInvalidoException("El cupón no está activo");
         }
         if (ahora.isBefore(cupon.getIniciadoEn())) {
-            throw new RuntimeException("El cupón todavía no está vigente");
+            throw new CuponNoVigenteException("El cupón todavía no está vigente");
         }
         if (ahora.isAfter(cupon.getTerminaEn())) {
-            throw new RuntimeException("El cupón ha expirado");
+            throw new CuponExpiradoException(cupon.getCodigoCupon());
         }
         if (carrito.getEstadoCarrito()==EstadoCarrito.ABANDONADO){
-            throw new RuntimeException("El Carrito esta Desactivado");
+            throw new CarritoNoModificableException("El Carrito esta Desactivado");
         }
         if (carrito.getCupon()!=null){
-            throw new RuntimeException("El Carrito ya tiene un cupon aplicado");
+            throw new CuponYaAplicadoException();
         }
 
         // validar casos en los que el cupon se deberia considera invalido para esta aplicacion
@@ -185,7 +175,7 @@ public class CuponServiceImp implements CuponeService {
 
     @Override
     public CarritoDto quitarCupon(UUID carritoId) {
-        Carrito carrito= carritoRepository.findById(carritoId).orElseThrow(()-> new RuntimeException("carrito no encontrado"));
+        Carrito carrito= carritoRepository.findById(carritoId).orElseThrow(()-> new RecursoNoEncontradoException("carrito no encontrado"));
         carrito.setCupon(null);
         carrito.setUltimaInteraccion(Instant.now());
         carritoRepository.save(carrito);
