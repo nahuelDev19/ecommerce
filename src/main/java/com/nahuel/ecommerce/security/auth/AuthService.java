@@ -4,6 +4,7 @@ import com.nahuel.ecommerce.dtos.UsuarioDto;
 import com.nahuel.ecommerce.entitys.OrigenRegistro;
 import com.nahuel.ecommerce.entitys.Rol;
 import com.nahuel.ecommerce.entitys.Usuario;
+import com.nahuel.ecommerce.exceptions.UsuarioYaRegistradoException;
 import com.nahuel.ecommerce.repositories.RefreshTokenRepository;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import com.nahuel.ecommerce.security.JwtService;
@@ -23,6 +24,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -99,18 +101,18 @@ public class AuthService {
     }
 
     public TokenResponseDto registrar(RegistroRequestDto request){
+        String emailNormalizado= normalizarEmail(request.getEmail());
+        if(usuarioRepository.findByEmail(emailNormalizado).isPresent()){
+            throw new UsuarioYaRegistradoException();
+        }
         Usuario usuario= Usuario.builder()
-                .email(normalizarEmail(request.getEmail()))
+                .email(emailNormalizado)
                 .nombreUsuario(request.getNombreUsuario())
                 .activo(true)
                 .rol(Rol.CLIENTE)
                 .contrasena(passwordEncoder.encode(request.getContrasena()))
                 .build();
 
-        Optional<Usuario> usuarioOpt=usuarioRepository.findByEmail(usuario.getEmail());
-        if (usuarioOpt.isPresent()){
-            throw new RuntimeException("el usuario ya se encuenta registrado");
-        }
         usuario.setOrigenRegistro(OrigenRegistro.LOCAL);
         Usuario usuarioGuardado= usuarioRepository.save(usuario);
 
@@ -184,6 +186,15 @@ public class AuthService {
         dto.setNombreUsuario(usuario.getNombreUsuario());
         dto.setEmail(usuario.getEmail());
         dto.setRol(usuario.getRol());
+        dto.setActivo(usuario.getActivo());
+        if(usuario.getOrigenRegistro().equals(OrigenRegistro.LOCAL)){
+        dto.setAccesoLocal(true);
+        }else {
+            dto.setAccesoLocal(false);
+        }
+
+        //carregir despues
+        dto.setCreadoEn(Instant.now());
 
         return dto;
     }
