@@ -5,6 +5,7 @@ import com.nahuel.ecommerce.entitys.Carrito;
 import com.nahuel.ecommerce.dtos.CarritoDto;
 import com.nahuel.ecommerce.entitys.ItemCarrito;
 import com.nahuel.ecommerce.entitys.Usuario;
+import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,9 +32,7 @@ public class CarritoServiceImp implements CarritoService {
     public CarritoDto guardar(CarritoDto dto) {
 
         Carrito carrito = toEntity(dto);
-
         carrito = carritoRepository.save(carrito);
-
         return toDto(carrito);
     }
 
@@ -49,17 +48,21 @@ public class CarritoServiceImp implements CarritoService {
     @Override
     public Optional<CarritoDto> buscarPorId(UUID id) {
         return Optional.ofNullable(carritoRepository.findById(id)
-                .map(this::toDto).orElseThrow(() -> new RuntimeException("Carrito no encontrado")));
+                .map(this::toDto).orElseThrow(() -> new RecursoNoEncontradoException("Carrito no encontrado")));
     }
 
     @Override
     public void eliminar(UUID id) {
-        Carrito carrito= carritoRepository.findById(id).orElseThrow(()-> new  RuntimeException("Carrito no encontrado"));
+        Carrito carrito= carritoRepository.findById(id)
+                .orElseThrow(()-> new RecursoNoEncontradoException("Carrito no encontrado"));
         carritoRepository.delete(carrito);
     }
 
     private CarritoDto toDto(Carrito carrito) {
 
+        BigDecimal montoDescuento= calcularDescuento(carrito,calcularTotal(carrito));
+        BigDecimal total= calcularTotal(carrito);
+        BigDecimal totalConDescuento=total.subtract(montoDescuento);
         CarritoDto dto = new CarritoDto();
 
         dto.setId(carrito.getId());
@@ -68,8 +71,9 @@ public class CarritoServiceImp implements CarritoService {
         dto.setCreadoEn(carrito.getCreadoEn());
         dto.setActualizadoEn(carrito.getActualizadoEn());
         dto.setUltimaInteraccion(carrito.getUltimaInteraccion());
-        dto.setSubtotal(calcularTotal(carrito));
-        dto.setTotal(calcularDescuento(carrito,calcularTotal(carrito)));
+        dto.setSubtotal(total);
+        dto.setDescuentoTotal(montoDescuento);
+        dto.setTotal(totalConDescuento);
         dto.setItems(
                 carrito.getItems()
                         .stream()
@@ -84,7 +88,7 @@ public class CarritoServiceImp implements CarritoService {
     private Carrito toEntity(CarritoDto dto) {
 
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
 
         Carrito carrito = new Carrito();
 

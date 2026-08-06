@@ -30,7 +30,7 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID> {
             @Param("nombre") String nombre,
             @Param("precioMin") BigDecimal precioMin,
             @Param("precioMax") BigDecimal precioMax,
-            @Param("soloActivo") boolean soloActivo,
+            @Param("soloActivos") boolean soloActivo,
             Pageable pageable
     );
 

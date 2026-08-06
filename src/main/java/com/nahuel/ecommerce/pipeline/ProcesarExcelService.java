@@ -1,6 +1,7 @@
 package com.nahuel.ecommerce.pipeline;
 
 import com.nahuel.ecommerce.dtos.ProductoExcelDto;
+import com.nahuel.ecommerce.exceptions.*;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
@@ -16,7 +17,7 @@ import java.util.List;
 public class ProcesarExcelService {
 
 
-    public List<ProductoExcelDto> leerExcel(MultipartFile file) throws IOException {
+    public List<ProductoExcelDto> leerExcel(MultipartFile file) {
         List<ProductoExcelDto> lista = new ArrayList<>();
 
         try (InputStream is = file.getInputStream();
@@ -26,7 +27,7 @@ public class ProcesarExcelService {
             Row headerRow= sheet.getRow(0);
 
             if (headerRow==null){
-                throw new RuntimeException("El documento debe contener los Encabezados");
+                throw new EncabezadoFaltanteException();
             }
 
             validarColumna(headerRow);
@@ -49,8 +50,11 @@ public class ProcesarExcelService {
             }
 
         }
-        catch (Exception e) {
-            throw new RuntimeException("Error al procesar archivo Excel", e);
+        catch (IOException e) {
+            throw new ErrorProcesamientoArchivoException("Error al procesar archivo Excel", e);
+        }
+        catch (Exception e){
+            throw new ErrorProcesamientoArchivoException("El archivo no tiene un formato Excel válido o está dañado", e);
         }
 
         return lista;
@@ -73,7 +77,7 @@ public class ProcesarExcelService {
         }
 
         if (!faltante.isEmpty()){
-            throw new RuntimeException("no pueden faltar columnas: "+ faltante);
+            throw new ColumnasFaltantesException(faltante);
         }
     }
 
@@ -110,9 +114,7 @@ public class ProcesarExcelService {
                 return String.valueOf(cell.getBooleanCellValue());
 
             case FORMULA:
-                return cell.getCellFormula();
-            // Alternativa profesional: evaluar fórmula con FormulaEvaluator
-
+                throw new FormulaNoPermitidaException();
             case BLANK:
                 return "";
 

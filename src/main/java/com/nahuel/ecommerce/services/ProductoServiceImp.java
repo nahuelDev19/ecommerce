@@ -4,6 +4,7 @@ import com.nahuel.ecommerce.dtos.Direccion;
 import com.nahuel.ecommerce.dtos.FiltrosBusquedaProductoDto;
 import com.nahuel.ecommerce.dtos.ProductoDto;
 import com.nahuel.ecommerce.entitys.Producto;
+import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
 import com.nahuel.ecommerce.repositories.ProductoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -51,7 +52,7 @@ public class ProductoServiceImp implements ProductoService {
 
     @Override
     public ProductoDto actualizarPorId(UUID id, ProductoDto dto) {
-        Producto productoExistente= productoRepository.findById(id).orElseThrow(()-> new RuntimeException("producto no se encontro en DB"));
+        Producto productoExistente= productoRepository.findById(id).orElseThrow(()-> new RecursoNoEncontradoException("producto no se encontro en DB"));
         productoExistente.setNombre(dto.getNombre());
         productoExistente.setDescripcion(dto.getDescripcion());
         productoExistente.setPrecioBase(dto.getPrecioBase());
@@ -63,10 +64,7 @@ public class ProductoServiceImp implements ProductoService {
         return convertirProductoDTO(actualizado);
     }
 
-    @Override
-    public List<ProductoDto> cargarProductosDesdeExcel(InputStream excelStream) {
-        return List.of();
-    }
+
 
     @Override
     public Page<ProductoDto> buscarProductos(FiltrosBusquedaProductoDto dto) {
@@ -90,7 +88,7 @@ public class ProductoServiceImp implements ProductoService {
 
     @Override
     public void descontinuarProducto(UUID id) {
-        Producto productodescontinuado= productoRepository.findById(id).orElseThrow(()-> new RuntimeException("producto no encontrado"));
+        Producto productodescontinuado= productoRepository.findById(id).orElseThrow(()-> new RecursoNoEncontradoException("producto no encontrado"));
         productodescontinuado.setFechaDescontinuado(Instant.now());
         productodescontinuado.setActivo(false);
         productoRepository.save(productodescontinuado);

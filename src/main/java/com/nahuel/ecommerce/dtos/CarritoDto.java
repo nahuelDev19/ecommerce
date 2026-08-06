@@ -1,6 +1,7 @@
 package com.nahuel.ecommerce.dtos;
 
 import com.nahuel.ecommerce.entitys.EstadoCarrito;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -12,6 +13,7 @@ public class CarritoDto {
 
     private UUID id;
     private EstadoCarrito estadoCarrito;
+    @NotNull(message = "El usuario es obligatorio")
     private UUID usuarioId;
     private List<ItemCarritoDto> items;
     private BigDecimal descuentoTotal;

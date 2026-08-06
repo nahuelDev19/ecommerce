@@ -2,6 +2,7 @@ package com.nahuel.ecommerce.controllers;
 
 import com.nahuel.ecommerce.dtos.UsuarioDto;
 import com.nahuel.ecommerce.services.UsuarioService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,7 +17,7 @@ public class UsuarioController {
     private final UsuarioService usuarioService;
 
     @PostMapping
-    public UsuarioDto guardar(@RequestBody UsuarioDto dto) {
+    public UsuarioDto guardar(@Valid @RequestBody UsuarioDto dto) {
 
         return usuarioService.guardar(dto);
     }
@@ -36,7 +37,6 @@ public class UsuarioController {
 
     @DeleteMapping("/{id}")
     public void eliminar(@PathVariable UUID id) {
-
         usuarioService.eliminar(id);
     }
 }

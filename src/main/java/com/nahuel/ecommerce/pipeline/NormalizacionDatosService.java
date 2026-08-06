@@ -12,18 +12,23 @@ public class NormalizacionDatosService {
     public List<ProductoExcelDto> normalizar(List<ProductoExcelDto> datos) {
         for (ProductoExcelDto dto: datos ) {
 
-            dto.setNombre(dto.getNombre().toLowerCase().trim());
-            dto.setDescripcion(dto.getDescripcion().toLowerCase().trim());
+            dto.setNombre(dto.getNombre().trim());
+            dto.setDescripcion(dto.getDescripcion().trim());
             dto.setMoneda(dto.getMoneda().toUpperCase().trim());
             dto.setActivo(dto.getActivo().toUpperCase().trim());
 
             if(dto.getPrecio().isEmpty()){
                 dto.setPrecio("0");
             }
-            dto.setPrecio(dto.getPrecio().replace(",",".").replaceAll("[^0-9.]", "").trim());
+            dto.setPrecio(normalizarPrecio(dto.getPrecio()));
         }
         return  datos;
     }
-
+    private String normalizarPrecio(String precio) {
+        return precio.trim()
+                .replaceAll("[^0-9,.]", "")
+                .replace(".", "")
+                .replace(",", ".");
+    }
 
 }

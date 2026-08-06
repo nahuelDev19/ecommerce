@@ -2,8 +2,12 @@ package com.nahuel.ecommerce.controllers;
 
 import com.nahuel.ecommerce.dtos.FiltrosBusquedaProductoDto;
 import com.nahuel.ecommerce.dtos.ProductoDto;
+import com.nahuel.ecommerce.dtos.ResultadoImportacionDto;
+import com.nahuel.ecommerce.exceptions.ArchivoVacioException;
+import com.nahuel.ecommerce.exceptions.FormatoInvalidoException;
 import com.nahuel.ecommerce.pipeline.ProcesarArchivosService;
 import com.nahuel.ecommerce.services.ProductoServiceImp;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -24,7 +28,7 @@ public class ProductoController {
     private final ProcesarArchivosService procesarArchivosService;
 
     @PostMapping
-    public ResponseEntity<?> crearProducto(@RequestBody ProductoDto dto){
+    public ResponseEntity<?> crearProducto(@Valid @RequestBody ProductoDto dto){
         ProductoDto ndto=productoService.guardarProducto(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(ndto);
     }
@@ -41,7 +45,7 @@ public class ProductoController {
     }
 
     @GetMapping("/filtrados")
-    public ResponseEntity<Page<ProductoDto>> buscarProductoFiltro(@ModelAttribute FiltrosBusquedaProductoDto dto) {
+    public ResponseEntity<Page<ProductoDto>> buscarProductoFiltro(@Valid @ModelAttribute FiltrosBusquedaProductoDto dto) {
         return ResponseEntity.ok(productoService.buscarProductos(dto));
     }
 
@@ -56,21 +60,26 @@ public class ProductoController {
         return ResponseEntity.ok(productoService.listarDescontinuados());
     }
 
-    @PostMapping(value="/importar", consumes = "multipart/form-data")
-    public ResponseEntity<List<ProductoDto>> importarDesdeExcel(@RequestParam("archivo") MultipartFile file) throws IOException {
-        List<ProductoDto> listaCreados= productoService.cargarProductosDesdeExcel(file.getInputStream());
-        return ResponseEntity.status(HttpStatus.CREATED).body(listaCreados);
-    }
+
 
     @PutMapping("/actualizar/{id}")
-    public ResponseEntity<?> actualizarProducto(@PathVariable UUID id, ProductoDto dto){
+    public ResponseEntity<?> actualizarProducto(@Valid @RequestBody ProductoDto dto,@PathVariable UUID id){
         return ResponseEntity.ok(productoService.actualizarPorId(id,dto));
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<?> upload(@RequestParam MultipartFile archivo) throws IOException {
-        //productoService.importar(archivo);
-        procesarArchivosService.procesarArchivo(archivo);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> upload(@RequestParam MultipartFile archivo){
+        if(archivo==null || archivo.isEmpty()){
+            throw new ArchivoVacioException();
+        }
+        String nombre= archivo.getOriginalFilename();
+        if(nombre==null || (!nombre.endsWith(".xls") && !nombre.endsWith(".xlsx"))){
+            throw new FormatoInvalidoException(nombre);
+        }
+
+
+        ResultadoImportacionDto resultado=  procesarArchivosService.procesarArchivo(archivo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(resultado);
+
     }
 }

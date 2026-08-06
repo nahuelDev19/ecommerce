@@ -4,6 +4,7 @@ import com.nahuel.ecommerce.dtos.CarritoDto;
 import com.nahuel.ecommerce.dtos.CuponDto;
 import com.nahuel.ecommerce.dtos.CuponDtoResponse;
 import com.nahuel.ecommerce.services.CuponeService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +20,7 @@ public class CuponController {
     private final CuponeService cuponeService;
 
     @PostMapping
-    public ResponseEntity<CuponDtoResponse> crearCupon(@RequestBody CuponDto dto) {
+    public ResponseEntity<CuponDtoResponse> crearCupon(@Valid @RequestBody CuponDto dto) {
         return ResponseEntity.ok(cuponeService.crearCupon(dto));
     }
 

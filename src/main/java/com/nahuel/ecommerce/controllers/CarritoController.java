@@ -6,6 +6,7 @@ import com.nahuel.ecommerce.dtos.EliminarItemCarritoDto;
 import com.nahuel.ecommerce.services.CarritoService;
 import com.nahuel.ecommerce.services.CuponeService;
 import com.nahuel.ecommerce.services.ItemCarritoService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,24 +24,24 @@ public class CarritoController {
     private final CuponeService cuponeService;
 
     @PostMapping
-    public CarritoDto guardar(@RequestBody CarritoDto dto) {
+    public CarritoDto guardar(@Valid @RequestBody CarritoDto dto) {
         return carritoService.guardar(dto);
     }
 
     @PostMapping("/agregar")
-    public ResponseEntity<?> agregarItemCarrito(@RequestBody ItemRequestDto dto){
+    public ResponseEntity<?> agregarItemCarrito(@Valid @RequestBody ItemRequestDto dto){
         CarritoDto carritoDto= itemCarritoService.agregarItem(dto);
         return ResponseEntity.ok(carritoDto);
     }
 
     @PostMapping("/disminuir")
-    public ResponseEntity<?> disminuirItemCarrito(@RequestBody ItemRequestDto dto){
+    public ResponseEntity<?> disminuirItemCarrito(@Valid @RequestBody ItemRequestDto dto){
         CarritoDto carritoDto= itemCarritoService.disminuirItem(dto);
         return ResponseEntity.ok(carritoDto);
     }
 
     @DeleteMapping("/eliminar/item")
-    public ResponseEntity<?> eliminarItemCarrito(@RequestBody EliminarItemCarritoDto dto){
+    public ResponseEntity<?> eliminarItemCarrito(@Valid @RequestBody EliminarItemCarritoDto dto){
         CarritoDto carritoDto= itemCarritoService.eliminarItem(dto);
         return ResponseEntity.ok(carritoDto);
     }
