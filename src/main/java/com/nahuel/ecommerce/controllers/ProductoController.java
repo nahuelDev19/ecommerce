@@ -3,6 +3,8 @@ package com.nahuel.ecommerce.controllers;
 import com.nahuel.ecommerce.dtos.FiltrosBusquedaProductoDto;
 import com.nahuel.ecommerce.dtos.ProductoDto;
 import com.nahuel.ecommerce.dtos.ResultadoImportacionDto;
+import com.nahuel.ecommerce.exceptions.ArchivoVacioException;
+import com.nahuel.ecommerce.exceptions.FormatoInvalidoException;
 import com.nahuel.ecommerce.pipeline.ProcesarArchivosService;
 import com.nahuel.ecommerce.services.ProductoServiceImp;
 import jakarta.validation.Valid;
@@ -66,13 +68,13 @@ public class ProductoController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<?> upload(@RequestParam MultipartFile archivo) throws IOException {
+    public ResponseEntity<?> upload(@RequestParam MultipartFile archivo){
         if(archivo==null || archivo.isEmpty()){
-            throw new RuntimeException("El Archivo no puede ser nulo o vacio");
+            throw new ArchivoVacioException();
         }
         String nombre= archivo.getOriginalFilename();
         if(nombre==null || (!nombre.endsWith(".xls") && !nombre.endsWith(".xlsx"))){
-            throw new RuntimeException("Formato de Archivo no valido, Formatos validos xlsx o xls");
+            throw new FormatoInvalidoException(nombre);
         }
 
 

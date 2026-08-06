@@ -21,7 +21,7 @@ public class ProcesarArchivosService {
     private final NormalizacionDatosService normalizacionDatosService;
     private final TransformacionDatosService transformacionDatosService;
 
-    public ResultadoImportacionDto procesarArchivo(MultipartFile file) throws IOException {
+    public ResultadoImportacionDto procesarArchivo(MultipartFile file){
 
         ResultadoImportacionDto resultado = new ResultadoImportacionDto();
 
