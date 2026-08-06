@@ -4,6 +4,7 @@ import com.nahuel.ecommerce.dtos.UsuarioDto;
 import com.nahuel.ecommerce.entitys.OrigenRegistro;
 import com.nahuel.ecommerce.entitys.Rol;
 import com.nahuel.ecommerce.entitys.Usuario;
+import com.nahuel.ecommerce.exceptions.UsuarioInactivoException;
 import com.nahuel.ecommerce.exceptions.UsuarioYaRegistradoException;
 import com.nahuel.ecommerce.repositories.RefreshTokenRepository;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
@@ -33,32 +34,17 @@ import java.util.UUID;
 @Service
 public class AuthService {
 
-    // registrar
-    // login
 
-        // intercambiar token google, (validar email null, validar si ya esta registrado con google (supabaseid con contenido) vincular )
-
-    // armar respuesta
-    // verificar activa
-    // normalizar
-    // nombre desde token
-    //
-
-
-    //--------------------------
 
     private final UsuarioRepository usuarioRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final SupabaseTokenVerifier supabaseTokenVerifier;
-    //private final RefreshTokenRepository refreshTokenRepository;
-    //private final RefreshTokenService refreshTokenService;
 
 
     public TokenResponseDto loginOAuth(String tokenSupabase) {
 
-        // 1. Validar el JWT de Supabase
         Jwt jwt = supabaseTokenVerifier.verificar(tokenSupabase);
 
         String emailCrudo = jwt.getClaimAsString("email");
@@ -96,7 +82,6 @@ public class AuthService {
 
             usuario = usuarioRepository.save(usuario);
         }
-
         return construirRespuesta(usuario);
     }
 
@@ -112,17 +97,13 @@ public class AuthService {
                 .rol(Rol.CLIENTE)
                 .contrasena(passwordEncoder.encode(request.getContrasena()))
                 .build();
-
         usuario.setOrigenRegistro(OrigenRegistro.LOCAL);
         Usuario usuarioGuardado= usuarioRepository.save(usuario);
 
         return construirRespuesta(usuarioGuardado);
-
     }
 
     public TokenResponseDto loguear(LoginRequestDto request){
-
-
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -169,8 +150,7 @@ public class AuthService {
 
     private void verificarUsuarioActivo(Usuario usuario) {
         if (!usuario.getActivo()) {
-            //throw new UsuarioInactivoException(...);
-            throw new RuntimeException("usuario no disponible");
+            throw new UsuarioInactivoException();
         }
     }
 

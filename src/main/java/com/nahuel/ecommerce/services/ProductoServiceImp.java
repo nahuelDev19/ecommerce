@@ -4,6 +4,7 @@ import com.nahuel.ecommerce.dtos.Direccion;
 import com.nahuel.ecommerce.dtos.FiltrosBusquedaProductoDto;
 import com.nahuel.ecommerce.dtos.ProductoDto;
 import com.nahuel.ecommerce.entitys.Producto;
+import com.nahuel.ecommerce.exceptions.ProductoYaRegistradoException;
 import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
 import com.nahuel.ecommerce.repositories.ProductoRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,10 +15,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.InputStream;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Transactional
@@ -28,6 +27,10 @@ public class ProductoServiceImp implements ProductoService {
     private final ProductoRepository productoRepository;
 
     public ProductoDto guardarProducto(ProductoDto dto) {
+        String nombreNormalizado = dto.getNombre().trim();
+        if(productoRepository.existsByNombre(nombreNormalizado)){
+            throw new ProductoYaRegistradoException(dto.getNombre());
+        }
         Producto producto = Producto.builder()
                 .nombre(dto.getNombre())
                 .descripcion(dto.getDescripcion())
