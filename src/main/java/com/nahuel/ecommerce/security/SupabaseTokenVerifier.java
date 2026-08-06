@@ -12,7 +12,7 @@ public class SupabaseTokenVerifier {
 
     private final JwtDecoder decoder;
 
-    public SupabaseTokenVerifier(@Value("${supabase.url}") String supabaseUrl) {
+    public SupabaseTokenVerifier(@Value("${PUBLIC_SUPABASE_URL}") String supabaseUrl) {
         String issuer = supabaseUrl + "/auth/v1";
 
         NimbusJwtDecoder nimbusDecoder = NimbusJwtDecoder

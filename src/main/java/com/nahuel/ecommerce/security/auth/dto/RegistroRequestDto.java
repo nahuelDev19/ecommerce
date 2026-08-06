@@ -10,8 +10,11 @@ public class RegistroRequestDto {
     @Email(message = "El email no tiene un formato válido")
     private String email;
 
-    @NotBlank
-    @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
+    @NotBlank(message = "password no debe ser vació")
+    @Pattern(
+            regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d).{8,}$",
+            message = "La contraseña debe tener 8 caracteres, una mayúscula, una minúscula y un número"
+    )
     private String contrasena;
 
     @NotBlank @Size(max = 100)
