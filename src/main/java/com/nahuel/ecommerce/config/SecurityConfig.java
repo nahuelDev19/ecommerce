@@ -5,6 +5,7 @@ import com.nahuel.ecommerce.security.UserDetailsServiceImp;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -32,7 +33,14 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth ->
-                        auth.anyRequest().permitAll()
+                        auth.requestMatchers(HttpMethod.POST,   "/api/productos/**").hasRole("ADMIN")
+                            .requestMatchers(HttpMethod.PUT,    "/api/productos/**").hasRole("ADMIN")
+                            .requestMatchers(HttpMethod.DELETE, "/api/productos/**").hasRole("ADMIN")
+                            .requestMatchers("/api/cupones/**").hasRole("ADMIN")
+                            .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
+                            .anyRequest().permitAll()
+
+
                 )
                 .sessionManagement(sesion ->sesion.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
