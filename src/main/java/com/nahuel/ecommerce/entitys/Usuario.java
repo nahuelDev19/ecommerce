@@ -19,6 +19,7 @@ public class Usuario implements UserDetails {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<Carrito> carritos= new HashSet<>();
     private String nombreUsuario;
     private String contrasena;
