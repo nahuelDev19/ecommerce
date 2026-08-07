@@ -4,6 +4,8 @@ import com.nahuel.ecommerce.dtos.ItemRequestDto;
 import com.nahuel.ecommerce.dtos.CarritoDto;
 import com.nahuel.ecommerce.dtos.EliminarItemCarritoDto;
 
+import java.util.UUID;
+
 public interface ItemCarritoService {
 
     /*
@@ -13,9 +15,9 @@ public interface ItemCarritoService {
     Buscar un ítem.
     */
 
-    CarritoDto agregarItem(ItemRequestDto dto);
-    CarritoDto disminuirItem(ItemRequestDto dto);
-    CarritoDto eliminarItem(EliminarItemCarritoDto dto);
+    CarritoDto agregarItem(ItemRequestDto dto, UUID idUsuario);
+    CarritoDto disminuirItem(ItemRequestDto dto, UUID idUsuario);
+    CarritoDto eliminarItem(EliminarItemCarritoDto dto, UUID idUsuario);
 
 
 }

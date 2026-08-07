@@ -69,7 +69,7 @@ public class UsuarioServiceImp implements UsuarioService {
 
     private Usuario toEntity(UsuarioDto dto) {
 
-        Usuario usuario = new Usuario();
+        Usuario usuario = new Usuario(usuario);
 
         usuario.setNombreUsuario(dto.getNombreUsuario());
         usuario.setEmail(dto.getEmail());

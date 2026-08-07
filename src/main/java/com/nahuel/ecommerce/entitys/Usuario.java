@@ -2,15 +2,17 @@ package com.nahuel.ecommerce.entitys;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
 @Entity
-public class Usuario {
+public class Usuario implements UserDetails {
 
 
     @Id
@@ -30,4 +32,21 @@ public class Usuario {
     private UUID supabaseId;
     @Enumerated(EnumType.STRING)
     private OrigenRegistro origenRegistro;
+
+
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_" + rol));
+    }
+
+    @Override
+    public @Nullable String getPassword() {
+        return getContrasena();
+    }
+
+    @Override
+    public String getUsername() {
+        return getEmail();
+    }
 }

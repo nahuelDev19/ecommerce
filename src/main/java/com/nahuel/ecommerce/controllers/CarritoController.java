@@ -3,12 +3,15 @@ package com.nahuel.ecommerce.controllers;
 import com.nahuel.ecommerce.dtos.ItemRequestDto;
 import com.nahuel.ecommerce.dtos.CarritoDto;
 import com.nahuel.ecommerce.dtos.EliminarItemCarritoDto;
+import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.services.CarritoService;
 import com.nahuel.ecommerce.services.CuponeService;
 import com.nahuel.ecommerce.services.ItemCarritoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,20 +32,23 @@ public class CarritoController {
     }
 
     @PostMapping("/agregar")
-    public ResponseEntity<?> agregarItemCarrito(@Valid @RequestBody ItemRequestDto dto){
-        CarritoDto carritoDto= itemCarritoService.agregarItem(dto);
+    public ResponseEntity<?> agregarItemCarrito(@Valid @RequestBody ItemRequestDto dto,@AuthenticationPrincipal  Usuario usuario){
+        UUID idUsuario= usuario.getId();
+        CarritoDto carritoDto= itemCarritoService.agregarItem(dto,idUsuario);
         return ResponseEntity.ok(carritoDto);
     }
 
     @PostMapping("/disminuir")
-    public ResponseEntity<?> disminuirItemCarrito(@Valid @RequestBody ItemRequestDto dto){
-        CarritoDto carritoDto= itemCarritoService.disminuirItem(dto);
+    public ResponseEntity<?> disminuirItemCarrito(@Valid @RequestBody ItemRequestDto dto,@AuthenticationPrincipal  Usuario usuario){
+        UUID idUsuario= usuario.getId();
+        CarritoDto carritoDto= itemCarritoService.disminuirItem(dto,idUsuario);
         return ResponseEntity.ok(carritoDto);
     }
 
     @DeleteMapping("/eliminar/item")
-    public ResponseEntity<?> eliminarItemCarrito(@Valid @RequestBody EliminarItemCarritoDto dto){
-        CarritoDto carritoDto= itemCarritoService.eliminarItem(dto);
+    public ResponseEntity<?> eliminarItemCarrito(@Valid @RequestBody EliminarItemCarritoDto dto,@AuthenticationPrincipal  Usuario usuario){
+        UUID idUsuario= usuario.getId();
+        CarritoDto carritoDto= itemCarritoService.eliminarItem(dto,idUsuario);
         return ResponseEntity.ok(carritoDto);
     }
 

@@ -14,6 +14,7 @@ import com.nahuel.ecommerce.repositories.ItemCarritoRepository;
 import com.nahuel.ecommerce.repositories.ProductoRepository;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,12 +37,12 @@ public class ItemCarritoServiceImp implements ItemCarritoService{
 
 
 
-    public CarritoDto agregarItem(ItemRequestDto dto){
+    public CarritoDto agregarItem(ItemRequestDto dto,UUID idUsuario){
 
-        Usuario usuario= usuarioRepository.findById(dto.getUsuarioId()).orElseThrow(()-> new RuntimeException("usuario no encontrado"));
+        Usuario usuario= usuarioRepository.findById(idUsuario).orElseThrow(()-> new RuntimeException("usuario no encontrado"));
         Producto producto = productoRepository.findById(dto.getProductoId()).orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
-        Carrito carrito= carritoRepository.findByUsuarioIdAndEstadoCarrito(dto.getUsuarioId(),ACTIVO)
+        Carrito carrito= carritoRepository.findByUsuarioIdAndEstadoCarrito(usuario.getId(),ACTIVO)
                 .orElseGet(()-> {
                     Carrito carrito1 = new Carrito();
                     carrito1.setUsuario(usuario);
@@ -76,14 +77,14 @@ public class ItemCarritoServiceImp implements ItemCarritoService{
     }
 
 @Override
-public CarritoDto disminuirItem(ItemRequestDto dto) {
+public CarritoDto disminuirItem(ItemRequestDto dto, UUID idUsuario) {
 
     if (dto.getCantidad() <= 0) {
         throw new RuntimeException("La cantidad debe ser mayor a cero");
     }
 
     Carrito carrito = carritoRepository
-            .findByUsuarioIdAndEstadoCarrito(dto.getUsuarioId(), ACTIVO)
+            .findByUsuarioIdAndEstadoCarrito(idUsuario, ACTIVO)
             .orElseThrow(() -> new RecursoNoEncontradoException("Carrito no encontrado o inactivo"));
 
     ItemCarrito item = itemCarritoRepository
@@ -111,10 +112,10 @@ public CarritoDto disminuirItem(ItemRequestDto dto) {
 }
 
     @Override
-    public CarritoDto eliminarItem(EliminarItemCarritoDto dto) {
+    public CarritoDto eliminarItem(EliminarItemCarritoDto dto, UUID idUsuario) {
 
         Carrito carrito = carritoRepository
-                .findByUsuarioIdAndEstadoCarrito(dto.getUsuarioId(), ACTIVO)
+                .findByUsuarioIdAndEstadoCarrito(idUsuario, ACTIVO)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Carrito no encontrado o inactivo"));
 
         ItemCarrito item = itemCarritoRepository
@@ -134,6 +135,8 @@ public CarritoDto disminuirItem(ItemRequestDto dto) {
 
         return toDto(carrito);
     }
+
+
     private CarritoDto toDto(Carrito carrito) {
 
         CarritoDto dto = new CarritoDto();
