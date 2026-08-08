@@ -43,4 +43,4 @@ public interface CarritoRepository extends JpaRepository<Carrito, UUID> {
     List<Carrito> findCarritosActivosAbandonados(@Param("limite") Instant limite);
 
     Optional<Carrito> findByIdAndUsuarioId(UUID id, UUID usuarioId);
-}
+   }

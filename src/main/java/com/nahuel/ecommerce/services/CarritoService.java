@@ -15,5 +15,7 @@ public interface CarritoService {
 
     CarritoDto buscarPorId(UUID id,UUID idUsuario);
 
-    void eliminar(UUID id);
+    void eliminar(UUID id,UUID idUsuario);
+    CarritoDto buscarCarritoActivoDelUsuarioAutenticado(UUID idUsuario);
+
 }

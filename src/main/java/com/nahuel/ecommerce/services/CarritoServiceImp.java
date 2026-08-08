@@ -3,6 +3,7 @@ package com.nahuel.ecommerce.services;
 import com.nahuel.ecommerce.dtos.ItemCarritoDto;
 import com.nahuel.ecommerce.entitys.Carrito;
 import com.nahuel.ecommerce.dtos.CarritoDto;
+import com.nahuel.ecommerce.entitys.EstadoCarrito;
 import com.nahuel.ecommerce.entitys.ItemCarrito;
 import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
@@ -52,10 +53,16 @@ public class CarritoServiceImp implements CarritoService {
     }
 
     @Override
-    public void eliminar(UUID id) {
-        Carrito carrito= carritoRepository.findById(id)
+    public void eliminar(UUID id,UUID idUsuario) {
+        Carrito carrito= carritoRepository.findByIdAndUsuarioId(id,idUsuario)
                 .orElseThrow(()-> new RecursoNoEncontradoException("Carrito no encontrado"));
         carritoRepository.delete(carrito);
+    }
+
+    @Override
+    public CarritoDto buscarCarritoActivoDelUsuarioAutenticado(UUID idUsuario) {
+        Carrito carrito= carritoRepository.findByUsuarioIdAndEstadoCarrito(idUsuario, EstadoCarrito.ACTIVO).orElseThrow(()-> new RecursoNoEncontradoException("no cuenta con un carrito activo"));
+        return  toDto(carrito);
     }
 
     private CarritoDto toDto(Carrito carrito) {

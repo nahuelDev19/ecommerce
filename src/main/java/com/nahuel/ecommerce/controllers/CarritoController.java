@@ -65,9 +65,8 @@ public class CarritoController {
     }
 
     @DeleteMapping("/{id}")
-    public void eliminar(@PathVariable UUID id) {
-
-        carritoService.eliminar(id);
+    public void eliminar(@PathVariable UUID id,@AuthenticationPrincipal Usuario usuario) {
+        carritoService.eliminar(id,usuario.getId());
     }
 
 
@@ -79,5 +78,11 @@ public class CarritoController {
     @PutMapping("/quitar/{idCarrito}/")
     public ResponseEntity<CarritoDto> quitarCupon(@PathVariable UUID idCarrito) {
         return ResponseEntity.ok(cuponeService.quitarCupon(idCarrito));
+    }
+
+
+    @GetMapping("/mi-carrito")
+    public CarritoDto miCarrito(@AuthenticationPrincipal Usuario usuario) {
+        return carritoService.buscarCarritoActivoDelUsuarioAutenticado(usuario.getId());
     }
 }
