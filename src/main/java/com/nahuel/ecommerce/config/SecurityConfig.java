@@ -38,7 +38,9 @@ public class SecurityConfig {
                             .requestMatchers(HttpMethod.DELETE, "/api/productos/**").hasRole("ADMIN")
                             .requestMatchers("/api/cupones/**").hasRole("ADMIN")
                             .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
-                            .anyRequest().permitAll()
+                            .requestMatchers("/auth/login").permitAll()
+                            .requestMatchers("/auth/oauth").permitAll()
+                            .anyRequest().authenticated()
 
 
                 )
