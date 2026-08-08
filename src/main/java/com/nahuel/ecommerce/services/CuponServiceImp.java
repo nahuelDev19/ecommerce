@@ -8,6 +8,7 @@ import com.nahuel.ecommerce.entitys.*;
 import com.nahuel.ecommerce.exceptions.*;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.CuponesRepository;
+import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -135,8 +136,8 @@ public class CuponServiceImp implements CuponeService {
     }
 
     @Override
-    public CarritoDto aplicarCupon(UUID carritoId, String codCupon) {
-        Carrito carrito= carritoRepository.findById(carritoId)
+    public CarritoDto aplicarCupon( UUID carritoId, String codCupon,UUID idUsuario) {
+        Carrito carrito= carritoRepository.findByIdAndUsuarioId(carritoId,idUsuario)
                 .orElseThrow(()-> new RecursoNoEncontradoException("carrito no encontrado"));
         Cupon cupon= cuponesRepository.findByCodigoCupon(codCupon.toUpperCase())
                 .orElseThrow(()-> new RecursoNoEncontradoException("el cupon no fue encontrado"));

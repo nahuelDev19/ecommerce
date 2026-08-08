@@ -60,9 +60,8 @@ public class CarritoController {
     }
 
     @GetMapping("/{id}")
-    public CarritoDto buscar(@PathVariable UUID id) {
-        return carritoService.buscarPorId(id)
-                .orElseThrow();
+    public CarritoDto buscar(@PathVariable UUID id,@AuthenticationPrincipal Usuario usuario) {
+        return carritoService.buscarPorId(id,usuario.getId());
     }
 
     @DeleteMapping("/{id}")
@@ -73,8 +72,9 @@ public class CarritoController {
 
 
     @PutMapping("/{idCarrito}/cupon/{codigo}")
-    public ResponseEntity<CarritoDto> aplicarCupon(@PathVariable UUID idCarrito, @PathVariable String codigo) {
-        return ResponseEntity.ok(cuponeService.aplicarCupon(idCarrito,codigo));
+    public ResponseEntity<CarritoDto> aplicarCupon(@PathVariable UUID idCarrito, @PathVariable String codigo,
+                                                   @AuthenticationPrincipal Usuario usuario) {
+        return ResponseEntity.ok(cuponeService.aplicarCupon(idCarrito,codigo,usuario.getId()));
     }
     @PutMapping("/quitar/{idCarrito}/")
     public ResponseEntity<CarritoDto> quitarCupon(@PathVariable UUID idCarrito) {

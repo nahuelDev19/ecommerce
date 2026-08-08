@@ -46,9 +46,9 @@ public class CarritoServiceImp implements CarritoService {
     }
 
     @Override
-    public Optional<CarritoDto> buscarPorId(UUID id) {
-        return Optional.ofNullable(carritoRepository.findById(id)
-                .map(this::toDto).orElseThrow(() -> new RecursoNoEncontradoException("Carrito no encontrado")));
+    public CarritoDto buscarPorId(UUID id,UUID idUsuario) {
+        return carritoRepository.findByIdAndUsuarioId(id, idUsuario)
+                .map(this::toDto).orElseThrow(() -> new RecursoNoEncontradoException("Carrito no encontrado"));
     }
 
     @Override

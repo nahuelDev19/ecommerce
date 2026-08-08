@@ -13,7 +13,7 @@ public interface CarritoService {
 
     List<CarritoDto> listar();
 
-    Optional<CarritoDto> buscarPorId(UUID id);
+    CarritoDto buscarPorId(UUID id,UUID idUsuario);
 
     void eliminar(UUID id);
 }
