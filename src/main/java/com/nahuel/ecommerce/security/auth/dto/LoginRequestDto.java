@@ -3,6 +3,7 @@ package com.nahuel.ecommerce.security.auth.dto;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
+@AllArgsConstructor @NoArgsConstructor
 @Data
 public class LoginRequestDto {
 

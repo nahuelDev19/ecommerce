@@ -23,13 +23,14 @@ public class Usuario implements UserDetails {
     private Set<Carrito> carritos= new HashSet<>();
     private String nombreUsuario;
     private String contrasena;
+    @Column(nullable = true, unique = true, length = 180)
     private String email;
     private Boolean activo;
 
     @Enumerated(EnumType.STRING)
     private Rol rol;
 
-
+    @Column(unique = true)
     private UUID supabaseId;
     @Enumerated(EnumType.STRING)
     private OrigenRegistro origenRegistro;
@@ -49,5 +50,10 @@ public class Usuario implements UserDetails {
     @Override
     public String getUsername() {
         return getEmail();
+    }
+
+    @Override
+    public boolean isEnabled(){
+        return Boolean.TRUE.equals(activo);
     }
 }

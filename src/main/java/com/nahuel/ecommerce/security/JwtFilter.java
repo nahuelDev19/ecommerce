@@ -1,7 +1,10 @@
 package com.nahuel.ecommerce.security;
 
 import com.nahuel.ecommerce.entitys.Usuario;
+import com.nahuel.ecommerce.exceptions.NoAutenticadoException;
+import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,7 +14,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -50,7 +52,7 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
         if (id != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            Usuario usuario= usuarioRepository.findById(id).orElseThrow(()-> new  RuntimeException("Usuario no encontrado"));
+            Usuario usuario= usuarioRepository.findById(id).orElseThrow(()-> new NoAutenticadoException());
 
             UserDetails userDetails =
                     userDetailsService.loadUserByUsername(usuario.getEmail());

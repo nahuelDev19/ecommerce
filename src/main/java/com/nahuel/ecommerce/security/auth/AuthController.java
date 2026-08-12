@@ -50,7 +50,6 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<String> logout() {
-
         authService.logout();
         return ResponseEntity.ok("Logout exitoso");
     }
