@@ -30,6 +30,9 @@ public class AuthController {
     public ResponseEntity<TokenResponseDto> loginOAuth(
             @Valid @RequestBody GoogleLoginRequestDto request) {
 
+        if(request==null){
+            throw new IllegalArgumentException("Request no puede ser nulo");        }
+
         return ResponseEntity.ok(
                 authService.loginOAuth(request.tokenSupabase())
         );

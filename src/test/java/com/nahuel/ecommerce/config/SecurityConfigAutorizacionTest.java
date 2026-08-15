@@ -2,24 +2,32 @@ package com.nahuel.ecommerce.config;
 
 import com.nahuel.ecommerce.security.JwtFilter;
 import com.nahuel.ecommerce.security.UserDetailsServiceImp;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpMethod;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.DefaultSecurityFilterChain;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class SecurityConfigAutorizationTest {
+class SecurityConfigAutorizacionTest {
 
     @Mock
     private UserDetailsServiceImp userDetailsServiceImp;
@@ -27,72 +35,89 @@ class SecurityConfigAutorizationTest {
     @Mock
     private JwtFilter jwtFilter;
 
-    @Mock
-    private HttpSecurity http;
-
-    @Mock
-    private AuthenticationConfiguration authenticationConfiguration;
-
-    @Mock
-    private AuthenticationManager authenticationManager;
-
     @InjectMocks
     private SecurityConfig securityConfig;
 
-    @Test
-    void passwordEncoder_returnsBCryptPasswordEncoder() {
-        PasswordEncoder encoder = securityConfig.passwordEncoder();
-        assertNotNull(encoder);
-        // BCryptPasswordEncoder implementa PasswordEncoder y tiene fuerza de hash (no verificamos el tipo por simplicidad).
+    @Nested
+    @DisplayName("Tests para Beans de Infraestructura")
+    class InfrastructureBeansTests {
+
+        @Test
+        @DisplayName("passwordEncoder debe retornar una instancia de BCryptPasswordEncoder")
+        void passwordEncoder_ShouldReturnBCryptPasswordEncoder() {
+            PasswordEncoder encoder = securityConfig.passwordEncoder();
+
+            assertThat(encoder).isNotNull();
+            assertThat(encoder).isInstanceOf(BCryptPasswordEncoder.class);
+        }
+
+        @Test
+        @DisplayName("authenticationProvider debe configurar DaoAuthenticationProvider con su UserDetailsService")
+        void authenticationProvider_ShouldConfigureDaoAuthenticationProvider() {
+            AuthenticationProvider provider = securityConfig.authenticationProvider();
+
+            assertThat(provider).isNotNull();
+            assertThat(provider).isInstanceOf(DaoAuthenticationProvider.class);
+
+            // Verificamos únicamente la inyección del UserDetailsService mediante reflexión
+            Object userDetailsService = ReflectionTestUtils.getField(provider, "userDetailsService");
+            assertThat(userDetailsService).isSameAs(userDetailsServiceImp);
+        }
+
+        @Test
+        @DisplayName("authenticationManager debe delegar a AuthenticationConfiguration")
+        void authenticationManager_ShouldDelegateToAuthenticationConfiguration() throws Exception {
+            AuthenticationConfiguration authenticationConfiguration = mock(AuthenticationConfiguration.class);
+            AuthenticationManager expectedManager = mock(AuthenticationManager.class);
+            when(authenticationConfiguration.getAuthenticationManager()).thenReturn(expectedManager);
+
+            AuthenticationManager actualManager = securityConfig.authenticationManager(authenticationConfiguration);
+
+            assertThat(actualManager).isSameAs(expectedManager);
+            verify(authenticationConfiguration, times(1)).getAuthenticationManager();
+        }
+
+        @Test
+        @DisplayName("desactivarRegistroAutomatico debe registrar el filtro con enabled=false")
+        void desactivarRegistroAutomatico_ShouldReturnDisabledFilterRegistrationBean() {
+            FilterRegistrationBean<JwtFilter> registrationBean = securityConfig.desactivarRegistroAutomatico(jwtFilter);
+
+            assertThat(registrationBean).isNotNull();
+            assertThat(registrationBean.getFilter()).isSameAs(jwtFilter);
+            assertThat(registrationBean.isEnabled()).isFalse();
+        }
+
+        @Test
+        @DisplayName("desactivarRegistroAutomatico con filtro null debe lanzar IllegalArgumentException")
+        void desactivarRegistroAutomatico_WithNullFilter_ShouldThrowException() {
+            // Se valida el comportamiento real de Spring Boot cuando el filtro es nulo
+            assertThrows(IllegalArgumentException.class, () -> {
+                securityConfig.desactivarRegistroAutomatico(null);
+            });
+        }
     }
 
-    @Test
-    void authenticationProvider_setsUserDetailsServiceAndPasswordEncoder() {
-        AuthenticationProvider provider = securityConfig.authenticationProvider();
-        assertNotNull(provider);
-        // No podemos acceder fácilmente a campos internos sin reflexión; verificamos interacción indirecta.
-        // Además, el método passwordEncoder() no depende de mocks: se usa BCrypt.
-    }
+    @Nested
+    @DisplayName("Tests para SecurityFilterChain")
+    class SecurityFilterChainTests {
 
-    @Test
-    void authenticationManager_delegatesToAuthenticationConfiguration() throws Exception {
-        when(authenticationConfiguration.getAuthenticationManager()).thenReturn(authenticationManager);
+        @Test
+        @DisplayName("filterChain debe configurar HttpSecurity y retornar el SecurityFilterChain")
+        void filterChain_ShouldConfigureHttpSecurityAndBuild() throws Exception {
+            HttpSecurity httpSecurity = mock(HttpSecurity.class, RETURNS_DEEP_STUBS);
+            DefaultSecurityFilterChain expectedChain = mock(DefaultSecurityFilterChain.class);
 
-        AuthenticationManager result = securityConfig.authenticationManager(authenticationConfiguration);
+            when(httpSecurity.csrf(any())).thenReturn(httpSecurity);
+            when(httpSecurity.authorizeHttpRequests(any())).thenReturn(httpSecurity);
+            when(httpSecurity.exceptionHandling(any())).thenReturn(httpSecurity);
+            when(httpSecurity.sessionManagement(any())).thenReturn(httpSecurity);
+            when(httpSecurity.addFilterBefore(any(), any())).thenReturn(httpSecurity);
+            when(httpSecurity.build()).thenReturn(expectedChain);
 
-        assertSame(authenticationManager, result);
-        verify(authenticationConfiguration, times(1)).getAuthenticationManager();
-    }
+            SecurityFilterChain actualChain = securityConfig.filterChain(httpSecurity);
 
-    @Test
-    void filterChain_buildsSecurityFilterChain_andAddsJwtFilterBeforeUsernamePasswordAuthFilter() throws Exception {
-        // Este test es intencionalmente liviano: validar que el método no retorna null y que llama a build().
-        // Mockito para HttpSecurity es complejo porque fluent APIs encadenan muchos pasos.
-        // Si tu build falla por mocks insuficientes, ajusta usando un HttpSecurity “real” o un Slice test;
-        // pero como pediste unitario puro, lo mantenemos mínimo.
-
-        SecurityFilterChain chain = securityConfig.filterChain(http);
-        assertNotNull(chain);
-
-        // Esperamos que se llame a build() sobre http si el método logra completar.
-        verify(http, atLeastOnce()).build();
-    }
-
-    @Test
-    void desactivarRegistroAutomatico_shouldNotReturnNull_BUG() {
-        // Bug detectado (actual): el método retorna null.
-        // Comportamiento esperado: debería desactivar el registro automático devolviendo FilterRegistrationBean configurada
-        // (p.ej. new FilterRegistrationBean<>(filtro) con setEnabled(false)).
-
-        // Falla con el código actual porque retorna null.
-        assertNotNull(securityConfig.desactivarRegistroAutomatico(jwtFilter));
-    }
-
-    @Test
-    void securityRules_smokeTest_constantsSanity() {
-        // Smoke test: no valida rutas (eso requeriría instanciar HttpSecurity real),
-        // pero asegura que las constantes que usas están bien formadas.
-        assertEquals(HttpMethod.POST, HttpMethod.POST);
-        assertEquals("Bearer ", "Bearer ");
+            assertThat(actualChain).isSameAs(expectedChain);
+            verify(httpSecurity).build();
+        }
     }
 }

@@ -165,7 +165,7 @@ class JwtFilterTest {
         UUID id = UUID.randomUUID();
 
         Usuario usuario = mock(Usuario.class);
-        when(usuario.getId()).thenReturn(id);
+        //when(usuario.getId()).thenReturn(id);
         when(usuario.getEmail()).thenReturn("test@email.com");
 
         when(request.getHeader("Authorization")).thenReturn("Bearer " + jwt);
@@ -197,7 +197,7 @@ class JwtFilterTest {
         UUID id = UUID.randomUUID();
 
         Usuario usuario = mock(Usuario.class);
-        when(usuario.getId()).thenReturn(id);
+        //when(usuario.getId()).thenReturn(id);
         when(usuario.getEmail()).thenReturn("test@email.com");
 
         when(request.getHeader("Authorization")).thenReturn("Bearer " + jwt);

@@ -79,6 +79,11 @@ public class SecurityConfig {
 
     @Bean
     public FilterRegistrationBean<JwtFilter> desactivarRegistroAutomatico(JwtFilter filtro){
-        return null;
+        FilterRegistrationBean<JwtFilter> registro =
+                new FilterRegistrationBean<>(filtro);
+
+        registro.setEnabled(false);
+
+        return registro;
     }
 }

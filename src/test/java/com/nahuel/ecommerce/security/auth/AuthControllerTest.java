@@ -136,22 +136,16 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("POST /auth/oauth - null request en controller llama igual al service (edge de controller unit)")
-    void loginOAuth_nullRequest_callsServiceWithNull() {
-        // Nota: en un entorno real, @Valid y el binding impedirían llegar acá,
-        // pero en unit test puro del controller no ejecutamos el validador.
-        TokenResponseDto expected = tokenResponse();
-        when(authService.loginOAuth((String) isNull())).thenReturn(expected);
+    @DisplayName("POST /auth/oauth - request null lanza excepción")
+    void loginOAuth_nullRequest_throwsException() {
 
-        ResponseEntity<TokenResponseDto> response = authController.loginOAuth((GoogleLoginRequestDto) null);
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> authController.loginOAuth(null)
+        );
 
-        assertNotNull(response);
-        assertEquals(200, response.getStatusCode().value());
-        assertEquals(expected, response.getBody());
+        assertEquals("Request no puede ser nulo", exception.getMessage());
 
-        // Si tu NullPointerException aparece por request.tokenSupabase(),
-        // este test fallará y te conviene ajustar: el controller debería evitar null o
-        // hacer test usando MockMvc para validar.
-        verifyNoMoreInteractions(authService);
+        verifyNoInteractions(authService);
     }
 }

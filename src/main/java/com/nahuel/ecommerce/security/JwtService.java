@@ -2,6 +2,7 @@ package com.nahuel.ecommerce.security;
 
 import com.nahuel.ecommerce.entitys.Usuario;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -69,11 +70,15 @@ public class JwtService {
     }
 
     private Claims extractAllClaims(String token) {
+        try {
         return Jwts.parser()
                 .verifyWith(getSignKey())   // usamos la misma clave para verificar
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+        }catch (ExpiredJwtException e){
+            return e.getClaims();
+        }
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {

@@ -74,11 +74,14 @@ class AuthServiceTest {
                 .origenRegistro(OrigenRegistro.LOCAL)
                 .build();
 
+        /*
         when(jwtService.generateToken(any(Usuario.class)))
                 .thenReturn("jwt-token");
 
         when(jwtService.getExpirationInSeconds())
                 .thenReturn(3600L);
+
+         */
     }
 
     // =========================================================
@@ -102,6 +105,10 @@ class AuthServiceTest {
         when(usuarioRepository.save(any(Usuario.class)))
                 .thenReturn(usuario);
 
+        when(jwtService.generateToken(usuario))          // <-- FALTABA ESTO
+                .thenReturn("jwt-token");
+        when(jwtService.getExpirationInSeconds())
+                .thenReturn(3600L);
         TokenResponseDto resultado = authService.registrar(request);
 
         assertNotNull(resultado);
@@ -195,7 +202,8 @@ class AuthServiceTest {
 
         when(usuarioRepository.findByEmail("nahuel@gmail.com"))
                 .thenReturn(Optional.of(usuario));
-
+        when(jwtService.generateToken(usuario))          // <-- FALTABA ESTO
+                .thenReturn("jwt-token");
         TokenResponseDto resultado = authService.loguear(request);
 
         assertNotNull(resultado);
@@ -238,6 +246,7 @@ class AuthServiceTest {
 
         when(authenticationManager.authenticate(any()))
                 .thenThrow(new BadCredentialsException("error"));
+
 
         BadCredentialsException exception = assertThrows(
                 BadCredentialsException.class,
@@ -302,9 +311,11 @@ class AuthServiceTest {
         when(supabaseTokenVerifier.verificar("supabase-token"))
                 .thenReturn(jwt);
 
+
         when(usuarioRepository.findByEmail("nahuel@gmail.com"))
                 .thenReturn(Optional.of(usuario));
-
+        when(jwtService.generateToken(usuario))          // <-- FALTABA ESTO
+                .thenReturn("jwt-token");
         TokenResponseDto resultado =
                 authService.loginOAuth("supabase-token");
 
