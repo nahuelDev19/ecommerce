@@ -230,16 +230,7 @@ class JwtServiceTest {
 
         Date ahora = new Date();
 
-        String token = Jwts.builder()
-                .subject(usuarioId.toString())
-                .issuedAt(
-                        new Date(ahora.getTime() - 10000)
-                )
-                .expiration(
-                        new Date(ahora.getTime() - 1000)
-                )
-                .signWith(key)
-                .compact();
+        String token = jwtService.generateToken(usuario, new Date(ahora.getTime() - 1000));
 
         boolean resultado =
                 jwtService.isTokenValid(token, usuario);

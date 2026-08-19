@@ -21,48 +21,26 @@ import java.util.function.Function;
 public class JwtService {
 
 
-
-    /*
-    public String generateToken(Usuario usuario){
-        //hora actual,
-        //construccion jwt
-       return null;
-    }
-
-     */
-
-
-    @Value("${JWT_SECRET}")
+    @Value("${jwt.secret}")
     private String secretKey;
 
-    @Value("${JWT_EXPIRATION}")
+    @Value("${jwt.expiration}")
     private Long expiration;
 
-    public String generateToken(Usuario usuario) {
+
+    public String generateToken(Usuario usuario,Date expirationDate) {
 
         return Jwts.builder()
                 .subject(usuario.getId().toString())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .expiration(expirationDate)
                 .signWith(getSignKey())
                 .compact();
     }
 
-   /*
-    public String generateToken( UserDetails userDetails){
-        return generateToken(new HashMap<>(),userDetails);
+    public String generateToken(Usuario usuario) {
+        return generateToken(usuario, new Date(System.currentTimeMillis() + expiration));
     }
-    public String generateToken(Map<String,Object> extraClaims, UserDetails userDetails){
-        return Jwts.builder()
-                .claims(extraClaims)
-                .subject(userDetails.getUsername())
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSignKey())
-                .compact();
-    }
-
-    */
 
     private SecretKey getSignKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
