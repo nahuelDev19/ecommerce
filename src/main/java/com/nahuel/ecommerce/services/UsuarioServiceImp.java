@@ -2,6 +2,7 @@ package com.nahuel.ecommerce.services;
 
 import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.dtos.UsuarioDto;
+import com.nahuel.ecommerce.exceptions.AccesoDenegadoException;
 import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,16 +42,25 @@ public class UsuarioServiceImp implements UsuarioService {
     }
 
     @Override
-    public Optional<UsuarioDto> buscarPorId(UUID id) {
-        return Optional.of(
-                usuarioRepository.findById(id)
-                        .map(this::toDto)
-                        .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"))
-        );
+    public UsuarioDto buscarPorId(UUID id, UUID autenticado) {
+        if (!id.equals(autenticado)) {
+            throw new AccesoDenegadoException();
+        }
+
+        return usuarioRepository.findById(id)
+                .map(this::toDto)
+                .orElseThrow(() ->
+                        new RecursoNoEncontradoException("Usuario no encontrado")
+                );
     }
 
     @Override
-    public void eliminar(UUID id) {
+    public void eliminar(UUID id,UUID autenticadoId) {
+
+        if (!id.equals(autenticadoId)) {
+            throw new AccesoDenegadoException();
+        }
+
         Usuario usuario= usuarioRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("usuario no encotrado"));
         usuarioRepository.delete(usuario);

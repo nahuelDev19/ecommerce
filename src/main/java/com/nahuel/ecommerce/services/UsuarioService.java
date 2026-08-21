@@ -3,7 +3,6 @@ package com.nahuel.ecommerce.services;
 import com.nahuel.ecommerce.dtos.UsuarioDto;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface UsuarioService {
@@ -12,8 +11,8 @@ public interface UsuarioService {
 
     List<UsuarioDto> listar();
 
-    Optional<UsuarioDto> buscarPorId(UUID id);
+    UsuarioDto buscarPorId(UUID id,UUID autenticadoId);
 
-    void eliminar(UUID id);
+    void eliminar(UUID id,UUID autenticadoId);
 
 }

@@ -44,6 +44,11 @@ public class JwtFilter extends OncePerRequestFilter {
         final String jwt = authHeader.substring(7);
         final UUID id;
         try {
+            String subject = jwtService.extractSubject(jwt);
+            if (subject == null) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido o expirado");
+                return;
+            }
             id = UUID.fromString(jwtService.extractSubject(jwt));
 
         } catch (JwtException | IllegalArgumentException e) {

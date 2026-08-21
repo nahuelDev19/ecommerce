@@ -1,7 +1,7 @@
 #
 # Perfil de test. Dos reglas:
-#  1. Nunca se copia un secreto real de Neon ni de Supabase ac·.
-#     Los valores son obviamente falsos a propÛsito.
+#  1. Nunca se copia un secreto real de Neon ni de Supabase ac√°.
+#     Los valores son obviamente falsos a prop√≥sito.
 #  2. No se declara datasource: los tests de seguridad no tocan la base.
 
 # HS256 exige clave de al menos 32 bytes, por eso el largo.
