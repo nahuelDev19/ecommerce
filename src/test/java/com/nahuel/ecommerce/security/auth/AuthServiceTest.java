@@ -1,6 +1,5 @@
 package com.nahuel.ecommerce.security.auth;
 
-import com.nahuel.ecommerce.dtos.UsuarioDto;
 import com.nahuel.ecommerce.entitys.OrigenRegistro;
 import com.nahuel.ecommerce.entitys.Rol;
 import com.nahuel.ecommerce.entitys.Usuario;

@@ -14,8 +14,7 @@ public class UsuarioDto {
     private String nombreUsuario;
     private Rol rol;
     private Boolean activo;
-    private boolean accesoLocal;    // ¿puede entrar con contraseña?
-    private boolean accesoGoogle;   // ¿puede entrar con Google?
+    private boolean accesoLocal;
+    private boolean accesoGoogle;
     private Instant creadoEn;
-    // supabaseId y contrasena NUNCA se exponen
 }

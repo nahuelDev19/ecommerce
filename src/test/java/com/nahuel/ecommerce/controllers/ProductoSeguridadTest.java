@@ -3,7 +3,6 @@ package com.nahuel.ecommerce.controllers;
 import com.nahuel.ecommerce.config.SecurityConfig;
 import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.pipeline.ProcesarArchivosService;
-import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import com.nahuel.ecommerce.security.JwtService;
 import com.nahuel.ecommerce.security.UserDetailsServiceImp;
 import com.nahuel.ecommerce.services.ProductoServiceImp;
@@ -14,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
