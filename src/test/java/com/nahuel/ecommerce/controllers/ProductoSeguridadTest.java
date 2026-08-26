@@ -3,6 +3,7 @@ package com.nahuel.ecommerce.controllers;
 import com.nahuel.ecommerce.config.SecurityConfig;
 import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.pipeline.ProcesarArchivosService;
+import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import com.nahuel.ecommerce.security.JwtService;
 import com.nahuel.ecommerce.security.UserDetailsServiceImp;
 import com.nahuel.ecommerce.services.ProductoServiceImp;

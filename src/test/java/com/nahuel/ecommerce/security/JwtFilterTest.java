@@ -2,6 +2,7 @@ package com.nahuel.ecommerce.security;
 
 import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.exceptions.NoAutenticadoException;
+import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
