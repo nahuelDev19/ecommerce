@@ -17,6 +17,8 @@ public interface CarritoRepository extends JpaRepository<Carrito, UUID> {
 
     Optional<Carrito> findByUsuarioIdAndEstadoCarrito(UUID usuarioId, EstadoCarrito estado);
 
+    List<Carrito> findByUsuarioId(UUID usuarioId);
+
     @Query("""
             SELECT c FROM Carrito c WHERE c.ultimaInteraccion <= :ultimaInteraccion AND
             c.estadoCarrito = 'ACTIVO'

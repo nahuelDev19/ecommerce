@@ -9,9 +9,9 @@ import java.util.UUID;
 
 public interface CarritoService {
 
-    CarritoDto guardar(CarritoDto dto);
+    CarritoDto guardar(CarritoDto dto, UUID idUsuario);
 
-    List<CarritoDto> listar();
+    List<CarritoDto> listar(UUID idUsuario);
 
     CarritoDto buscarPorId(UUID id,UUID idUsuario);
 

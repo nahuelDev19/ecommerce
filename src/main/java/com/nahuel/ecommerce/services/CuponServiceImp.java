@@ -175,8 +175,9 @@ public class CuponServiceImp implements CuponeService {
 
 
     @Override
-    public CarritoDto quitarCupon(UUID carritoId) {
-        Carrito carrito= carritoRepository.findById(carritoId).orElseThrow(()-> new RecursoNoEncontradoException("carrito no encontrado"));
+    public CarritoDto quitarCupon(UUID carritoId, UUID idUsuario) {
+        Carrito carrito= carritoRepository.findByIdAndUsuarioId(carritoId, idUsuario)
+                .orElseThrow(()-> new RecursoNoEncontradoException("carrito no encontrado"));
         carrito.setCupon(null);
         carrito.setUltimaInteraccion(Instant.now());
         carritoRepository.save(carrito);

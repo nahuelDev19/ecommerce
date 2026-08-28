@@ -301,6 +301,17 @@ class AuthServiceTest {
 
         UUID supabaseId = UUID.randomUUID();
 
+        // El usuario de Google se identifica por su supabaseId (no por email).
+        Usuario usuarioGoogle = Usuario.builder()
+                .id(UUID.randomUUID())
+                .email("nahuel@gmail.com")
+                .nombreUsuario("Nahuel")
+                .activo(true)
+                .rol(Rol.CLIENTE)
+                .origenRegistro(OrigenRegistro.GOOGLE)
+                .supabaseId(supabaseId)
+                .build();
+
         when(jwt.getClaimAsString("email"))
                 .thenReturn("  NAHUEL@GMAIL.COM ");
 
@@ -311,9 +322,9 @@ class AuthServiceTest {
                 .thenReturn(jwt);
 
 
-        when(usuarioRepository.findByEmail("nahuel@gmail.com"))
-                .thenReturn(Optional.of(usuario));
-        when(jwtService.generateToken(usuario))          // <-- FALTABA ESTO
+        when(usuarioRepository.findBySupabaseId(supabaseId))
+                .thenReturn(Optional.of(usuarioGoogle));
+        when(jwtService.generateToken(usuarioGoogle))
                 .thenReturn("jwt-token");
         TokenResponseDto resultado =
                 authService.loginOAuth("supabase-token");
@@ -326,13 +337,16 @@ class AuthServiceTest {
                 .verificar("supabase-token");
 
         verify(usuarioRepository)
-                .findByEmail("nahuel@gmail.com");
+                .findBySupabaseId(supabaseId);
+
+        verify(usuarioRepository, never())
+                .findByEmail(anyString());
 
         verify(usuarioRepository, never())
                 .save(any());
 
         verify(jwtService)
-                .generateToken(usuario);
+                .generateToken(usuarioGoogle);
     }
 
     @Test

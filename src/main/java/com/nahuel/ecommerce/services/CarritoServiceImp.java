@@ -14,9 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static com.nahuel.ecommerce.services.CuponServiceImp.calcularDescuento;
@@ -30,17 +28,24 @@ public class CarritoServiceImp implements CarritoService {
     private final UsuarioRepository usuarioRepository;
 
     @Override
-    public CarritoDto guardar(CarritoDto dto) {
+    public CarritoDto guardar(CarritoDto dto, UUID idUsuario) {
 
-        Carrito carrito = toEntity(dto);
+        // Se ignora deliberadamente dto.getId() y dto.getUsuarioId():
+        // el id lo genera la BD y el dueño SIEMPRE es el usuario autenticado.
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
+
+        Carrito carrito = new Carrito();
+        carrito.setUsuario(usuario);
+
         carrito = carritoRepository.save(carrito);
         return toDto(carrito);
     }
 
     @Override
-    public List<CarritoDto> listar() {
+    public List<CarritoDto> listar(UUID idUsuario) {
 
-        return carritoRepository.findAll()
+        return carritoRepository.findByUsuarioId(idUsuario)
                 .stream()
                 .map(this::toDto)
                 .toList();
@@ -91,20 +96,6 @@ public class CarritoServiceImp implements CarritoService {
         return dto;
     }
 
-
-    private Carrito toEntity(CarritoDto dto) {
-
-        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
-
-        Carrito carrito = new Carrito();
-
-        carrito.setId(dto.getId());
-        carrito.setUsuario(usuario);
-
-        return carrito;
-
-    }
 
     private BigDecimal calcularTotal(Carrito carrito) {
         return carrito.getItems().stream()

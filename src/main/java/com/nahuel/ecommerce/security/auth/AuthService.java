@@ -6,7 +6,6 @@ import com.nahuel.ecommerce.entitys.Rol;
 import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.exceptions.UsuarioInactivoException;
 import com.nahuel.ecommerce.exceptions.UsuarioYaRegistradoException;
-import com.nahuel.ecommerce.repositories.RefreshTokenRepository;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import com.nahuel.ecommerce.security.JwtService;
 import com.nahuel.ecommerce.security.SupabaseTokenVerifier;
@@ -26,7 +25,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -64,24 +62,51 @@ public class AuthService {
             throw new BadCredentialsException("El subject de Supabase no es un UUID válido");
         }
 
-        Map<String, Object> appMetadata = jwt.getClaim("app_metadata");
-        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
+        // Primero por supabaseId (identidad verificada por Supabase); el email
+        // solo se consulta si no hay match, para no gastar una query al pedo.
+        Optional<Usuario> porSupabaseId = usuarioRepository.findBySupabaseId(supabaseId);
 
         Usuario usuario;
 
-        if (usuarioOpt.isPresent()) {
-            usuario = usuarioOpt.get();
+        if (porSupabaseId.isPresent()) {
+            usuario = porSupabaseId.get();
         } else {
-            usuario = Usuario.builder()
-                    .email(email)
-                    .origenRegistro(OrigenRegistro.GOOGLE)
-                    .supabaseId(supabaseId)
-                    .rol(Rol.CLIENTE)
-                    .activo(true)
-                    .build();
+            Optional<Usuario> porEmail = usuarioRepository.findByEmail(email);
 
-            usuario = usuarioRepository.save(usuario);
+            if (porEmail.isPresent()) {
+                usuario = porEmail.get();
+
+                // SEGURIDAD: una cuenta LOCAL (creada con contraseña) NUNCA se enlaza
+                // automáticamente con OAuth. Si se hiciera, cualquiera podría registrar
+                // localmente un email ajeno y, cuando el dueño entrara con Google, la
+                // cuenta quedaría compartida con el atacante (que conserva la contraseña).
+                if (usuario.getOrigenRegistro() != OrigenRegistro.GOOGLE) {
+                    throw new BadCredentialsException(
+                            "Ya existe una cuenta con este email creada con contraseña. " +
+                            "Iniciá sesión con tu contraseña para vincularla.");
+                }
+
+                // Cuenta GOOGLE legada sin supabaseId: se completa la vinculación.
+                if (usuario.getSupabaseId() == null) {
+                    usuario.setSupabaseId(supabaseId);
+                    usuario = usuarioRepository.save(usuario);
+                }
+            } else {
+                usuario = Usuario.builder()
+                        .email(email)
+                        .origenRegistro(OrigenRegistro.GOOGLE)
+                        .supabaseId(supabaseId)
+                        .rol(Rol.CLIENTE)
+                        .activo(true)
+                        .build();
+
+                usuario = usuarioRepository.save(usuario);
+            }
         }
+
+        // Un usuario desactivado no puede volver a entrar, ni siquiera por OAuth.
+        verificarUsuarioActivo(usuario);
+
         return construirRespuesta(usuario);
     }
 

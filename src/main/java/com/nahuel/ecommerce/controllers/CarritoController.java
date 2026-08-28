@@ -27,8 +27,8 @@ public class CarritoController {
     private final CuponeService cuponeService;
 
     @PostMapping
-    public CarritoDto guardar(@Valid @RequestBody CarritoDto dto) {
-        return carritoService.guardar(dto);
+    public CarritoDto guardar(@Valid @RequestBody CarritoDto dto, @AuthenticationPrincipal Usuario usuario) {
+        return carritoService.guardar(dto, usuario.getId());
     }
 
     @PostMapping("/agregar")
@@ -55,8 +55,8 @@ public class CarritoController {
 
 
     @GetMapping
-    public List<CarritoDto> listar() {
-        return carritoService.listar();
+    public List<CarritoDto> listar(@AuthenticationPrincipal Usuario usuario) {
+        return carritoService.listar(usuario.getId());
     }
 
     @GetMapping("/{id}")
@@ -76,8 +76,9 @@ public class CarritoController {
         return ResponseEntity.ok(cuponeService.aplicarCupon(idCarrito,codigo,usuario.getId()));
     }
     @PutMapping("/quitar/{idCarrito}/")
-    public ResponseEntity<CarritoDto> quitarCupon(@PathVariable UUID idCarrito) {
-        return ResponseEntity.ok(cuponeService.quitarCupon(idCarrito));
+    public ResponseEntity<CarritoDto> quitarCupon(@PathVariable UUID idCarrito,
+                                                   @AuthenticationPrincipal Usuario usuario) {
+        return ResponseEntity.ok(cuponeService.quitarCupon(idCarrito, usuario.getId()));
     }
 
 

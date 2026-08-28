@@ -20,5 +20,5 @@ public interface CuponeService {
 
     CuponDtoResponse buscarPorCodigo(String codigo);
     CarritoDto aplicarCupon(UUID carritoId, String codigoCupon,UUID idUsuario);
-    CarritoDto quitarCupon(UUID carritoId);
+    CarritoDto quitarCupon(UUID carritoId, UUID idUsuario);
 }
