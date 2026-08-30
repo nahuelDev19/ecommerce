@@ -49,7 +49,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido o expirado");
                 return;
             }
-            id = UUID.fromString(jwtService.extractSubject(jwt));
+            id = UUID.fromString(subject);
 
         } catch (JwtException | IllegalArgumentException e) {
         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido o expirado");
@@ -57,7 +57,12 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
         if (id != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            Usuario usuario= usuarioRepository.findById(id).orElseThrow(()-> new NoAutenticadoException());
+            Usuario usuario= usuarioRepository.findById(id).orElse(null);
+
+            if(usuario ==null ||!usuario.getActivo()){
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Usuario no encontrado o cuenta desactivada");
+                return;
+            }
 
             UserDetails userDetails =
                     userDetailsService.loadUserByUsername(usuario.getEmail());
@@ -84,6 +89,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 );
                 return;
             }
+
         }
         filterChain.doFilter(request, response);
     }
