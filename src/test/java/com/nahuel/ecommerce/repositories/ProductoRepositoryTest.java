@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
         "Condición de reactivación: agregar la dependencia h2 (scope test) en el pom.xml o configurar un perfil de BDD de pruebas.")
 class ProductoRepositoryTest {
 
+
     @Autowired
     private ProductoRepository productoRepository;
 
