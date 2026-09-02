@@ -37,8 +37,7 @@ public class JwtTestHelper {
     /** Token válido, con expiración según config de test, para el usuario dado. */
     public String tokenParaUsuario(Usuario usuario) {
         return construirToken(
-                usuario.getUsername(),
-                usuario.getRol().name(),
+                usuario.getId().toString(),
                 new Date(System.currentTimeMillis() + EXPIRATION_MS),
                 TEST_SIGNING_KEY
         );
@@ -47,8 +46,7 @@ public class JwtTestHelper {
     /** Token ya vencido, útil para testear el camino de expiración (401). */
     public String tokenExpirado(Usuario usuario) {
         return construirToken(
-                usuario.getUsername(),
-                usuario.getRol().name(),
+                usuario.getId().toString(),
                 new Date(System.currentTimeMillis() - 1000),
                 TEST_SIGNING_KEY
         );
@@ -60,17 +58,16 @@ public class JwtTestHelper {
                 "otra-clave-completamente-distinta-solo-para-test-9876543210".getBytes()
         );
         return construirToken(
-                usuario.getUsername(),
-                usuario.getRol().name(),
+                usuario.getId().toString(),
                 new Date(System.currentTimeMillis() + EXPIRATION_MS),
                 otraClave
         );
     }
 
-    private String construirToken(String username, String rol, Date expiracion, SecretKey clave) {
+
+    private String construirToken(String subject, Date expiracion, SecretKey clave) {
         return Jwts.builder()
-                .subject(username)
-                .claim("rol", rol)
+                .subject(subject)
                 .issuedAt(new Date())
                 .expiration(expiracion)
                 .signWith(clave)
