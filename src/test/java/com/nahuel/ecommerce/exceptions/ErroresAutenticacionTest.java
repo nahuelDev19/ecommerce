@@ -1,4 +1,4 @@
-package com.nahuel.ecommerce.exeptions;
+package com.nahuel.ecommerce.exceptions;
 
 public class ErroresAutenticacionTest {
 }
