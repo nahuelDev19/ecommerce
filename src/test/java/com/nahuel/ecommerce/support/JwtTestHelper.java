@@ -1,5 +1,6 @@
 package com.nahuel.ecommerce.support;
 
+import com.nahuel.ecommerce.entitys.Rol;
 import com.nahuel.ecommerce.entitys.Usuario;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -39,7 +40,8 @@ public class JwtTestHelper {
         return construirToken(
                 usuario.getId().toString(),
                 new Date(System.currentTimeMillis() + EXPIRATION_MS),
-                TEST_SIGNING_KEY
+                TEST_SIGNING_KEY,
+                usuario.getRol()
         );
     }
 
@@ -48,7 +50,8 @@ public class JwtTestHelper {
         return construirToken(
                 usuario.getId().toString(),
                 new Date(System.currentTimeMillis() - 1000),
-                TEST_SIGNING_KEY
+                TEST_SIGNING_KEY,
+                usuario.getRol()
         );
     }
 
@@ -60,18 +63,25 @@ public class JwtTestHelper {
         return construirToken(
                 usuario.getId().toString(),
                 new Date(System.currentTimeMillis() + EXPIRATION_MS),
-                otraClave
+                otraClave,
+                usuario.getRol()
         );
     }
 
 
-    private String construirToken(String subject, Date expiracion, SecretKey clave) {
-        return Jwts.builder()
+    private String construirToken(String subject, Date expiracion, SecretKey clave, Rol rol) {
+        var builder = Jwts.builder()
                 .subject(subject)
                 .issuedAt(new Date())
                 .expiration(expiracion)
-                .signWith(clave)
-                .compact();
+                .signWith(clave);
+
+        // Mismo contrato que JwtService de producción: el claim "rol" viaja firmado.
+        if (rol != null) {
+            builder.claim("rol", rol.name());
+        }
+
+        return builder.compact();
     }
 
     /**

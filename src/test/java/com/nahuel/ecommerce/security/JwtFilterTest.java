@@ -1,7 +1,6 @@
 package com.nahuel.ecommerce.security;
 
 import com.nahuel.ecommerce.entitys.Usuario;
-import com.nahuel.ecommerce.exceptions.NoAutenticadoException;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -141,7 +140,7 @@ class JwtFilterTest {
     }
 
     @Test
-    void usuarioNoExiste_debeLanzarNoAutenticadoException_yNoContinua() throws ServletException, IOException {
+    void usuarioNoExiste_envia401UsuarioNoEncontrado_yNoContinua() throws ServletException, IOException {
         String jwt = "valid.jwt.token";
         UUID id = UUID.randomUUID();
 
@@ -149,11 +148,12 @@ class JwtFilterTest {
         when(jwtService.extractSubject(jwt)).thenReturn(id.toString());
         when(usuarioRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(NoAutenticadoException.class, () ->
-                jwtFilter.doFilterInternal(request, response, filterChain)
-        );
+        jwtFilter.doFilterInternal(request, response, filterChain);
 
-        verify(response, never()).sendError(anyInt(), anyString());
+        verify(response, times(1)).sendError(
+                HttpServletResponse.SC_UNAUTHORIZED,
+                "Usuario no encontrado o cuenta desactivada"
+        );
         verify(filterChain, never()).doFilter(any(), any());
         verifyNoInteractions(userDetailsService);
         assertNull(SecurityContextHolder.getContext().getAuthentication());
@@ -167,6 +167,7 @@ class JwtFilterTest {
         Usuario usuario = mock(Usuario.class);
         //when(usuario.getId()).thenReturn(id);
         when(usuario.getEmail()).thenReturn("test@email.com");
+        when(usuario.getActivo()).thenReturn(true);
 
         when(request.getHeader("Authorization")).thenReturn("Bearer " + jwt);
         when(jwtService.extractSubject(jwt)).thenReturn(id.toString());
@@ -199,6 +200,7 @@ class JwtFilterTest {
         Usuario usuario = mock(Usuario.class);
         //when(usuario.getId()).thenReturn(id);
         when(usuario.getEmail()).thenReturn("test@email.com");
+        when(usuario.getActivo()).thenReturn(true);
 
         when(request.getHeader("Authorization")).thenReturn("Bearer " + jwt);
         when(jwtService.extractSubject(jwt)).thenReturn(id.toString());

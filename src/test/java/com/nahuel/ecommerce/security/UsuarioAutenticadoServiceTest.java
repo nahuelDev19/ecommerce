@@ -112,7 +112,7 @@ class UsuarioAutenticadoServiceTest {
     @Test
     void verificarPropietario_deberiaPermitirSiUsuarioEsPropietario() {
 
-        usuario.setRol(Rol.PROPIETARIO);
+        usuario.setRol(Rol.ADMIN);
 
         when(usuarioRepository.findByEmail("nahuel@gmail.com"))
                 .thenReturn(Optional.of(usuario));
