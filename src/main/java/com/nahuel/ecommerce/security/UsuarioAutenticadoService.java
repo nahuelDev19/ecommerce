@@ -16,7 +16,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static com.nahuel.ecommerce.entitys.Rol.ADMIN;
-import static com.nahuel.ecommerce.entitys.Rol.PROPIETARIO;
 
 @Service
 @RequiredArgsConstructor
