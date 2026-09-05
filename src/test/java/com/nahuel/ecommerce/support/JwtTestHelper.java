@@ -76,10 +76,7 @@ public class JwtTestHelper {
                 .expiration(expiracion)
                 .signWith(clave);
 
-        // Mismo contrato que JwtService de producción: el claim "rol" viaja firmado.
-        if (rol != null) {
-            builder.claim("rol", rol.name());
-        }
+
 
         return builder.compact();
     }
