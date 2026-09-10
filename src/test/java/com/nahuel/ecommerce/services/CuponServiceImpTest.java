@@ -257,7 +257,7 @@ class CuponServiceImpTest {
                 verify(carritoRepository, never()).save(any(Carrito.class));
             }
 
-            @Test
+            /*@Test
             @DisplayName("Bypass por reducción posterior: si el subtotal cae por debajo del mínimo, el descuento calculado debe ser cero")
             void calcularDescuento_subtotalCaePorDebajoDelMontoMinimo_descuentoEsCero() {
                 carrito.setCupon(cuponVigente);
@@ -273,6 +273,23 @@ class CuponServiceImpTest {
                 BigDecimal subtotalActual = new BigDecimal("400.00");
                 BigDecimal descuentoCalculado = CuponServiceImp.calcularDescuento(carrito, subtotalActual);
 
+                assertThat(descuentoCalculado)
+                        .as("El descuento debe ser cero si el subtotal actual del carrito es menor al monto mínimo exigido por el cupón")
+                        .isEqualByComparingTo(BigDecimal.ZERO);
+            }
+             */
+
+            @Test
+            @DisplayName("Bypass por reducción posterior: si el subtotal cae por debajo del mínimo, el descuento calculado debe ser cero")
+            void calcularDescuento_subtotalCaePorDebajoDelMontoMinimo_descuentoEsCero() {
+                // Given: Carrito que mantiene el cupón pero cuyo subtotal actual ($400.00) no alcanza el mínimo ($1000.00)
+                carrito.setCupon(cuponVigente);
+                BigDecimal subtotalReducido = new BigDecimal("400.00");
+
+                // When: Se calcula el descuento sobre el subtotal reducido
+                BigDecimal descuentoCalculado = CuponServiceImp.calcularDescuento(carrito, subtotalReducido);
+
+                // Then: El descuento debe ser 0.00 independientemente de que el cupón siga asociado
                 assertThat(descuentoCalculado)
                         .as("El descuento debe ser cero si el subtotal actual del carrito es menor al monto mínimo exigido por el cupón")
                         .isEqualByComparingTo(BigDecimal.ZERO);

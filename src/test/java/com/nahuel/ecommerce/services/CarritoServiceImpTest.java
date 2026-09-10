@@ -5,6 +5,7 @@ import com.nahuel.ecommerce.entitys.Carrito;
 import com.nahuel.ecommerce.entitys.EstadoCarrito;
 import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
+import com.nahuel.ecommerce.exceptions.ReglaNegocioException;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -28,10 +30,8 @@ import static org.mockito.Mockito.*;
 /**
  * Tests de servicio sobre CarritoServiceImp con caminos buenos y malos.
  *
- * El foco está en la autorización a nivel de negocio (IDOR / mass-assignment):
- * los tests que aquí se ven eran IMPOSIBLES de escribir antes del fix, porque
- * guardar()/listar() no recibían el usuario autenticado y confiaban en los
- * campos id/usuarioId que manda el cliente.
+ * El foco está en la autorización a nivel de negocio (IDOR / mass-assignment)
+ * y en el control de estado de carrito único por usuario.
  */
 @ExtendWith(MockitoExtension.class)
 class CarritoServiceImpTest {
@@ -95,8 +95,6 @@ class CarritoServiceImpTest {
             UUID idCarrito = UUID.randomUUID();
             UUID idOtroUsuario = UUID.randomUUID();
 
-            // El repositorio solo encuentra carritos del dueño:
-            // para un usuario distinto devuelve vacío y el servicio debe rechazar.
             when(carritoRepository.findByIdAndUsuarioId(idCarrito, idOtroUsuario))
                     .thenReturn(Optional.empty());
 
@@ -143,82 +141,114 @@ class CarritoServiceImpTest {
     }
 
     // =====================================================================
-    // guardar (anti mass-assignment)
+    // guardar (anti mass-assignment y control de carrito unico activo)
     // =====================================================================
 
     @Nested
-    @DisplayName("guardar (anti mass-assignment)")
+    @DisplayName("guardar")
     class Guardar {
 
-        @Test
-        @DisplayName("Camino malo: el cliente manda id y usuarioId ajeno -> se ignoran; dueño = usuario autenticado")
-        void guardar_dtoConIdYUsuarioAjeno_ignoraCamposDelCliente() {
-            UUID idCarritoInventado = UUID.randomUUID();
-            UUID idOtroUsuario = UUID.randomUUID();
+        @Nested
+        @DisplayName("Camino bueno")
+        class CaminoBueno {
 
-            CarritoDto dto = new CarritoDto();
-            dto.setId(idCarritoInventado);      // el cliente "elige" el id
-            dto.setUsuarioId(idOtroUsuario);    // el cliente "elige" el dueño
+            @Test
+            @DisplayName("Crea el carrito con estado ACTIVO por defecto si el usuario no tiene uno activo")
+            void guardar_carritoNuevoQuedaActivo() {
+                CarritoDto dto = new CarritoDto();
 
-            when(usuarioRepository.findById(idUsuario))
-                    .thenReturn(Optional.of(usuario));
-            when(carritoRepository.save(any(Carrito.class)))
-                    .thenAnswer(inv -> inv.getArgument(0));
+                when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.of(usuario));
+                when(carritoRepository.findByUsuarioIdAndEstadoCarrito(idUsuario, EstadoCarrito.ACTIVO))
+                        .thenReturn(Optional.empty());
+                when(carritoRepository.save(any(Carrito.class)))
+                        .thenAnswer(inv -> inv.getArgument(0));
 
-            carritoService.guardar(dto, idUsuario);
+                CarritoDto resultado = carritoService.guardar(dto, idUsuario);
 
-            ArgumentCaptor<Carrito> captor = ArgumentCaptor.forClass(Carrito.class);
-            verify(carritoRepository).save(captor.capture());
-
-            Carrito guardado = captor.getValue();
-            assertNotEquals(idCarritoInventado, guardado.getId(),
-                    "El id debe generarlo la BD, no tomarlo del cliente");
-            assertSame(usuario, guardado.getUsuario(),
-                    "El dueño debe ser el usuario autenticado, no el usuarioId del DTO");
+                assertEquals(EstadoCarrito.ACTIVO, resultado.getEstadoCarrito());
+                assertEquals(idUsuario, resultado.getUsuarioId());
+            }
         }
 
-        @Test
-        @DisplayName("Camino malo: el usuarioId del DTO nunca se consulta ni se usa")
-        void guardar_noUsaElUsuarioDelDto() {
-            UUID idOtroUsuario = UUID.randomUUID();
+        @Nested
+        @DisplayName("Camino malo")
+        class CaminoMalo {
 
-            CarritoDto dto = new CarritoDto();
-            dto.setUsuarioId(idOtroUsuario);
+            @Test
+            @DisplayName("El cliente manda id y usuarioId ajeno -> se ignoran; dueño = usuario autenticado")
+            void guardar_dtoConIdYUsuarioAjeno_ignoraCamposDelCliente() {
+                UUID idCarritoInventado = UUID.randomUUID();
+                UUID idOtroUsuario = UUID.randomUUID();
 
-            when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.of(usuario));
-            when(carritoRepository.save(any(Carrito.class)))
-                    .thenAnswer(inv -> inv.getArgument(0));
+                CarritoDto dto = new CarritoDto();
+                dto.setId(idCarritoInventado);
+                dto.setUsuarioId(idOtroUsuario);
 
-            carritoService.guardar(dto, idUsuario);
+                when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.of(usuario));
+                when(carritoRepository.findByUsuarioIdAndEstadoCarrito(idUsuario, EstadoCarrito.ACTIVO))
+                        .thenReturn(Optional.empty());
+                when(carritoRepository.save(any(Carrito.class)))
+                        .thenAnswer(inv -> inv.getArgument(0));
 
-            verify(usuarioRepository, never()).findById(idOtroUsuario);
-            verify(usuarioRepository).findById(idUsuario);
-        }
+                carritoService.guardar(dto, idUsuario);
 
-        @Test
-        @DisplayName("Camino bueno: crea el carrito con estado ACTIVO por defecto")
-        void guardar_carritoNuevoQuedaActivo() {
-            CarritoDto dto = new CarritoDto();
+                ArgumentCaptor<Carrito> captor = ArgumentCaptor.forClass(Carrito.class);
+                verify(carritoRepository).save(captor.capture());
 
-            when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.of(usuario));
-            when(carritoRepository.save(any(Carrito.class)))
-                    .thenAnswer(inv -> inv.getArgument(0));
+                Carrito guardado = captor.getValue();
+                assertNotEquals(idCarritoInventado, guardado.getId(),
+                        "El id debe generarlo la BD, no tomarlo del cliente");
+                assertSame(usuario, guardado.getUsuario(),
+                        "El dueño debe ser el usuario autenticado, no el usuarioId del DTO");
+            }
 
-            CarritoDto resultado = carritoService.guardar(dto, idUsuario);
+            @Test
+            @DisplayName("El usuarioId del DTO nunca se consulta ni se usa")
+            void guardar_noUsaElUsuarioDelDto() {
+                UUID idOtroUsuario = UUID.randomUUID();
 
-            assertEquals(EstadoCarrito.ACTIVO, resultado.getEstadoCarrito());
-            assertEquals(idUsuario, resultado.getUsuarioId());
-        }
+                CarritoDto dto = new CarritoDto();
+                dto.setUsuarioId(idOtroUsuario);
 
-        @Test
-        @DisplayName("Camino malo: usuario autenticado inexistente -> RecursoNoEncontrado")
-        void guardar_usuarioInexistente_lanzaRecursoNoEncontrado() {
-            when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.empty());
+                when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.of(usuario));
+                when(carritoRepository.findByUsuarioIdAndEstadoCarrito(idUsuario, EstadoCarrito.ACTIVO))
+                        .thenReturn(Optional.empty());
+                when(carritoRepository.save(any(Carrito.class)))
+                        .thenAnswer(inv -> inv.getArgument(0));
 
-            assertThrows(RecursoNoEncontradoException.class,
-                    () -> carritoService.guardar(new CarritoDto(), idUsuario));
+                carritoService.guardar(dto, idUsuario);
 
-            verify(carritoRepository, never()).save(any());
+                verify(usuarioRepository, never()).findById(idOtroUsuario);
+                verify(usuarioRepository).findById(idUsuario);
+            }
+
+            @Test
+            @DisplayName("Usuario autenticado inexistente -> RecursoNoEncontrado")
+            void guardar_usuarioInexistente_lanzaRecursoNoEncontrado() {
+                when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.empty());
+
+                assertThrows(RecursoNoEncontradoException.class,
+                        () -> carritoService.guardar(new CarritoDto(), idUsuario));
+
+                verify(carritoRepository, never()).save(any());
+            }
+
+            @Test
+            @DisplayName("Abuso de lógica: rechaza la creación de un nuevo carrito si el usuario ya posee uno ACTIVO")
+            void guardar_usuarioYaTieneCarritoActivo_lanzaReglaNegocioException() {
+                CarritoDto dto = new CarritoDto();
+                Carrito carritoActivoExistente = carritoDe(UUID.randomUUID(), usuario);
+
+                when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.of(usuario));
+                when(carritoRepository.findByUsuarioIdAndEstadoCarrito(idUsuario, EstadoCarrito.ACTIVO))
+                        .thenReturn(Optional.of(carritoActivoExistente));
+
+                assertThatThrownBy(() -> carritoService.guardar(dto, idUsuario))
+                        .as("No debe permitirse crear múltiples carritos en estado ACTIVO para un mismo usuario")
+                        .isInstanceOf(ReglaNegocioException.class);
+
+                verify(carritoRepository, never()).save(any(Carrito.class));
+            }
         }
     }
 
@@ -257,3 +287,10 @@ class CarritoServiceImpTest {
         }
     }
 }
+
+/*
+ =========================================================================================
+ FILTRO OBLIGATORIO:
+ 1. "este test se pone rojo si alguien permite crear o guardar un nuevo carrito para un usuario que ya cuenta con un carrito en estado ACTIVO"
+ =========================================================================================
+*/

@@ -7,6 +7,7 @@ import com.nahuel.ecommerce.entitys.EstadoCarrito;
 import com.nahuel.ecommerce.entitys.ItemCarrito;
 import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
+import com.nahuel.ecommerce.exceptions.ReglaNegocioException;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,10 +31,12 @@ public class CarritoServiceImp implements CarritoService {
     @Override
     public CarritoDto guardar(CarritoDto dto, UUID idUsuario) {
 
-        // Se ignora deliberadamente dto.getId() y dto.getUsuarioId():
-        // el id lo genera la BD y el dueño SIEMPRE es el usuario autenticado.
         Usuario usuario = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
+
+        if (carritoRepository.findByUsuarioIdAndEstadoCarrito(idUsuario, EstadoCarrito.ACTIVO).isPresent()) {
+            throw new ReglaNegocioException("El usuario ya tiene un carrito activo.");
+        }
 
         Carrito carrito = new Carrito();
         carrito.setUsuario(usuario);

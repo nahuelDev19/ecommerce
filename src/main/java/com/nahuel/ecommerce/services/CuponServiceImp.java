@@ -250,6 +250,9 @@ private CarritoDto toDto(Carrito carrito) {
         }
 
         Cupon cupon = carrito.getCupon();
+        if(cupon.getMontoMinimoCarrito()!=null && subtotal.compareTo(cupon.getMontoMinimoCarrito())<0){
+            return BigDecimal.ZERO;
+        }
 
         switch (cupon.getTipoDescuento()) {
 
