@@ -168,9 +168,14 @@ public class CuponServiceImp implements CuponeService {
         if (carrito.getCupon()!=null){
             throw new CuponYaAplicadoException();
         }
+        if (cupon.getMontoMinimoCarrito() != null &&
+                cupon.getMontoMinimoCarrito().compareTo(BigDecimal.ZERO) > 0) {
 
-        // validar casos en los que el cupon se deberia considera invalido para esta aplicacion
-
+            BigDecimal subtotal = calcularSubtotal(carrito);
+            if (subtotal.compareTo(cupon.getMontoMinimoCarrito()) < 0) {
+                throw new ReglaNegocioException("El subtotal del carrito no alcanza el monto mínimo requerido para usar este cupón.");
+            }
+        }
     }
 
 

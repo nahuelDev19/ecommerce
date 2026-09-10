@@ -38,11 +38,11 @@ public class ItemCarritoServiceImp implements ItemCarritoService {
 
     @Override
     public CarritoDto agregarItem(ItemRequestDto dto, UUID idUsuario) {
-
         Usuario usuario = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
         Producto producto = productoRepository.findById(dto.getProductoId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado"));
+
 
         Carrito carrito = carritoRepository.findByUsuarioIdAndEstadoCarrito(usuario.getId(), ACTIVO)
                 .orElseGet(() -> {
@@ -54,6 +54,10 @@ public class ItemCarritoServiceImp implements ItemCarritoService {
                 });
 
         Optional<ItemCarrito> itemExistente = itemCarritoRepository.findByCarritoIdAndProductoId(carrito.getId(), dto.getProductoId());
+
+        if(dto.getCantidad()<1){
+            throw new ReglaNegocioException("Cantidad no puede ser menor a 1 o negativo");
+        }
 
         if (itemExistente.isPresent()) {
             ItemCarrito item = itemExistente.get();

@@ -9,6 +9,7 @@ import com.nahuel.ecommerce.entitys.ItemCarrito;
 import com.nahuel.ecommerce.entitys.Producto;
 import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
+import com.nahuel.ecommerce.exceptions.ReglaNegocioException;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.ItemCarritoRepository;
 import com.nahuel.ecommerce.repositories.ProductoRepository;
@@ -27,6 +28,7 @@ import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -37,7 +39,7 @@ import static org.mockito.Mockito.*;
  * Los tres métodos ya reciben el id del usuario autenticado y resuelven el
  * carrito activo con findByUsuarioIdAndEstadoCarrito, así que el scoping por
  * usuario está cubierto; los caminos malos acá son los casos de recurso
- * inexistente y cantidades inválidas.
+ * inexistente, abuso de lógica (cantidades negativas) y cantidades inválidas.
  */
 @ExtendWith(MockitoExtension.class)
 class ItemCarritoServiceImpTest {
@@ -108,68 +110,131 @@ class ItemCarritoServiceImpTest {
     @DisplayName("agregarItem")
     class AgregarItem {
 
-        @Test
-        @DisplayName("Camino bueno: sin carrito activo, crea el carrito y agrega el item")
-        void agregarItem_sinCarritoActivo_creaCarritoYAgregaItem() {
-            when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.of(usuario));
-            when(productoRepository.findById(idProducto)).thenReturn(Optional.of(producto));
-            when(carritoRepository.findByUsuarioIdAndEstadoCarrito(idUsuario, EstadoCarrito.ACTIVO))
-                    .thenReturn(Optional.empty());
-            when(carritoRepository.save(any(Carrito.class)))
-                    .thenAnswer(inv -> inv.getArgument(0));
-            when(itemCarritoRepository.findByCarritoIdAndProductoId(any(), eq(idProducto)))
-                    .thenReturn(Optional.empty());
-            when(itemCarritoRepository.save(any(ItemCarrito.class)))
-                    .thenAnswer(inv -> inv.getArgument(0));
+        @Nested
+        @DisplayName("Camino bueno")
+        class CaminoBueno {
 
-            CarritoDto dto = itemCarritoService.agregarItem(requestCantidad(2), idUsuario);
+            @Test
+            @DisplayName("Sin carrito activo, crea el carrito y agrega el item")
+            void agregarItem_sinCarritoActivo_creaCarritoYAgregaItem() {
+                when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.of(usuario));
+                when(productoRepository.findById(idProducto)).thenReturn(Optional.of(producto));
+                when(carritoRepository.findByUsuarioIdAndEstadoCarrito(idUsuario, EstadoCarrito.ACTIVO))
+                        .thenReturn(Optional.empty());
+                when(carritoRepository.save(any(Carrito.class)))
+                        .thenAnswer(inv -> inv.getArgument(0));
+                when(itemCarritoRepository.findByCarritoIdAndProductoId(any(), eq(idProducto)))
+                        .thenReturn(Optional.empty());
+                when(itemCarritoRepository.save(any(ItemCarrito.class)))
+                        .thenAnswer(inv -> inv.getArgument(0));
 
-            assertNotNull(dto);
-            assertEquals(1, dto.getItems().size());
-            assertEquals(idProducto, dto.getItems().get(0).getProductoId());
-            assertEquals(2, dto.getItems().get(0).getCantidad());
-            assertEquals(new BigDecimal("1500.00"), dto.getItems().get(0).getPrecioUnitario());
-            assertEquals(new BigDecimal("3000.00"), dto.getItems().get(0).getSubtotal());
+                CarritoDto dto = itemCarritoService.agregarItem(requestCantidad(2), idUsuario);
+
+                assertNotNull(dto);
+                assertEquals(1, dto.getItems().size());
+                assertEquals(idProducto, dto.getItems().get(0).getProductoId());
+                assertEquals(2, dto.getItems().get(0).getCantidad());
+                assertEquals(new BigDecimal("1500.00"), dto.getItems().get(0).getPrecioUnitario());
+                assertEquals(new BigDecimal("3000.00"), dto.getItems().get(0).getSubtotal());
+            }
+
+            @Test
+            @DisplayName("Si el item ya existe, incrementa la cantidad")
+            void agregarItem_conItemExistente_incrementaCantidad() {
+                ItemCarrito item = itemCon(3);
+
+                when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.of(usuario));
+                when(productoRepository.findById(idProducto)).thenReturn(Optional.of(producto));
+                when(carritoRepository.findByUsuarioIdAndEstadoCarrito(idUsuario, EstadoCarrito.ACTIVO))
+                        .thenReturn(Optional.of(carrito));
+                when(itemCarritoRepository.findByCarritoIdAndProductoId(carrito.getId(), idProducto))
+                        .thenReturn(Optional.of(item));
+
+                itemCarritoService.agregarItem(requestCantidad(2), idUsuario);
+
+                ArgumentCaptor<ItemCarrito> captor = ArgumentCaptor.forClass(ItemCarrito.class);
+                verify(itemCarritoRepository).save(captor.capture());
+                assertEquals(5, captor.getValue().getCantidad());
+            }
         }
 
-        @Test
-        @DisplayName("Camino bueno: si el item ya existe, incrementa la cantidad")
-        void agregarItem_conItemExistente_incrementaCantidad() {
-            ItemCarrito item = itemCon(3);
+        @Nested
+        @DisplayName("Camino malo")
+        class CaminoMalo {
 
-            when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.of(usuario));
-            when(productoRepository.findById(idProducto)).thenReturn(Optional.of(producto));
-            when(carritoRepository.findByUsuarioIdAndEstadoCarrito(idUsuario, EstadoCarrito.ACTIVO))
-                    .thenReturn(Optional.of(carrito));
-            when(itemCarritoRepository.findByCarritoIdAndProductoId(carrito.getId(), idProducto))
-                    .thenReturn(Optional.of(item));
+            @Test
+            @DisplayName("Producto inexistente -> lanza excepción y no guarda nada")
+            void agregarItem_productoInexistente_lanzaExcepcion() {
+                when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.of(usuario));
+                when(productoRepository.findById(idProducto)).thenReturn(Optional.empty());
 
-            itemCarritoService.agregarItem(requestCantidad(2), idUsuario);
+                assertThrows(RuntimeException.class,
+                        () -> itemCarritoService.agregarItem(requestCantidad(1), idUsuario));
 
-            ArgumentCaptor<ItemCarrito> captor = ArgumentCaptor.forClass(ItemCarrito.class);
-            verify(itemCarritoRepository).save(captor.capture());
-            assertEquals(5, captor.getValue().getCantidad());
-        }
+                verify(itemCarritoRepository, never()).save(any());
+            }
 
-        @Test
-        @DisplayName("Camino malo: producto inexistente -> lanza excepción y no guarda nada")
-        void agregarItem_productoInexistente_lanzaExcepcion() {
-            when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.of(usuario));
-            when(productoRepository.findById(idProducto)).thenReturn(Optional.empty());
+            @Test
+            @DisplayName("Usuario inexistente -> lanza excepción")
+            void agregarItem_usuarioInexistente_lanzaExcepcion() {
+                when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.empty());
 
-            assertThrows(RuntimeException.class,
-                    () -> itemCarritoService.agregarItem(requestCantidad(1), idUsuario));
+                assertThrows(RuntimeException.class,
+                        () -> itemCarritoService.agregarItem(requestCantidad(1), idUsuario));
+            }
 
-            verify(itemCarritoRepository, never()).save(any());
-        }
+            @Test
+            @DisplayName("Cantidad negativa en nuevo ítem -> rechaza y lanza ReglaNegocioException")
+            void agregarItem_cantidadNegativaNuevoItem_lanzaReglaNegocioException() {
+                when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.of(usuario));
+                when(productoRepository.findById(idProducto)).thenReturn(Optional.of(producto));
+                when(carritoRepository.findByUsuarioIdAndEstadoCarrito(idUsuario, EstadoCarrito.ACTIVO))
+                        .thenReturn(Optional.of(carrito));
+                when(itemCarritoRepository.findByCarritoIdAndProductoId(carrito.getId(), idProducto))
+                        .thenReturn(Optional.empty());
 
-        @Test
-        @DisplayName("Camino malo: usuario inexistente -> lanza excepción")
-        void agregarItem_usuarioInexistente_lanzaExcepcion() {
-            when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.empty());
+                assertThatThrownBy(() -> itemCarritoService.agregarItem(requestCantidad(-5), idUsuario))
+                        .as("Agregar un ítem con cantidad negativa debe ser rechazado por regla de negocio")
+                        .isInstanceOf(ReglaNegocioException.class);
 
-            assertThrows(RuntimeException.class,
-                    () -> itemCarritoService.agregarItem(requestCantidad(1), idUsuario));
+                verify(itemCarritoRepository, never()).save(any(ItemCarrito.class));
+            }
+
+            @Test
+            @DisplayName("Cantidad cero en nuevo ítem -> rechaza y lanza ReglaNegocioException")
+            void agregarItem_cantidadCero_lanzaReglaNegocioException() {
+                when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.of(usuario));
+                when(productoRepository.findById(idProducto)).thenReturn(Optional.of(producto));
+                when(carritoRepository.findByUsuarioIdAndEstadoCarrito(idUsuario, EstadoCarrito.ACTIVO))
+                        .thenReturn(Optional.of(carrito));
+                when(itemCarritoRepository.findByCarritoIdAndProductoId(carrito.getId(), idProducto))
+                        .thenReturn(Optional.empty());
+
+                assertThatThrownBy(() -> itemCarritoService.agregarItem(requestCantidad(0), idUsuario))
+                        .as("Agregar un ítem con cantidad cero debe ser rechazado antes de persistir")
+                        .isInstanceOf(ReglaNegocioException.class);
+
+                verify(itemCarritoRepository, never()).save(any(ItemCarrito.class));
+            }
+
+            @Test
+            @DisplayName("Cantidad negativa en ítem existente -> rechaza inyección negativa")
+            void agregarItem_cantidadNegativaEnItemExistente_lanzaReglaNegocioException() {
+                ItemCarrito itemExistente = itemCon(10);
+
+                when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.of(usuario));
+                when(productoRepository.findById(idProducto)).thenReturn(Optional.of(producto));
+                when(carritoRepository.findByUsuarioIdAndEstadoCarrito(idUsuario, EstadoCarrito.ACTIVO))
+                        .thenReturn(Optional.of(carrito));
+                when(itemCarritoRepository.findByCarritoIdAndProductoId(carrito.getId(), idProducto))
+                        .thenReturn(Optional.of(itemExistente));
+
+                assertThatThrownBy(() -> itemCarritoService.agregarItem(requestCantidad(-3), idUsuario))
+                        .as("No debe permitirse reducir stock o inyectar cantidades negativas vía agregarItem")
+                        .isInstanceOf(ReglaNegocioException.class);
+
+                verify(itemCarritoRepository, never()).save(any(ItemCarrito.class));
+            }
         }
     }
 
@@ -301,3 +366,12 @@ class ItemCarritoServiceImpTest {
         }
     }
 }
+
+/*
+ =========================================================================================
+ FILTRO OBLIGATORIO:
+ 1. "este test se pone rojo si alguien permite agregar un nuevo ítem al carrito con cantidad negativa"
+ 2. "este test se pone rojo si alguien permite agregar un ítem con cantidad igual a cero"
+ 3. "este test se pone rojo si alguien permite restar unidades o alterar ítems existentes enviando una cantidad negativa mediante agregarItem"
+ =========================================================================================
+*/
