@@ -50,7 +50,7 @@ public class CuponServiceImp implements CuponeService {
         }
 
         // validar para asegurar que descuento del cupon no sea del 100% del valor total en porcentaje
-        if(dto.getTipoDescuento()== PORCENTAJE && dto.getValorDescuento().compareTo(BigDecimal.valueOf(99))>0){
+        if(dto.getTipoDescuento()== PORCENTAJE && dto.getValorDescuento().compareTo(BigDecimal.valueOf(100))>=0){
             throw new ReglaNegocioException("El porcentaje del cupon no debe ser mayor o igual a 100%");
         }
 
@@ -175,13 +175,15 @@ public class CuponServiceImp implements CuponeService {
         if (carrito.getCupon()!=null){
             throw new CuponYaAplicadoException();
         }
+        if(carrito.getItems().isEmpty()){
+            throw new ReglaNegocioException("los items no pueden estar vacios");
+        }
         if (cupon.getMontoMinimoCarrito() != null &&
                 cupon.getMontoMinimoCarrito().compareTo(BigDecimal.ZERO) > 0) {
 
             BigDecimal subtotal = calcularSubtotal(carrito);
             if (subtotal.compareTo(cupon.getMontoMinimoCarrito()) < 0) {
-                throw new ReglaNegocioException("El subtotal del carrito no alcanza el monto mínimo requerido para usar este cupón.");
-            }
+                throw new MontoMinimoNoAlcanzadoException("El subtotal del carrito no alcanza el monto mínimo requerido para usar este cupón.");            }
         }
     }
 

@@ -2,13 +2,7 @@ package com.nahuel.ecommerce.services;
 
 import com.nahuel.ecommerce.dtos.CarritoDto;
 import com.nahuel.ecommerce.entitys.*;
-import com.nahuel.ecommerce.exceptions.CarritoNoModificableException;
-import com.nahuel.ecommerce.exceptions.CuponExpiradoException;
-import com.nahuel.ecommerce.exceptions.CuponInvalidoException;
-import com.nahuel.ecommerce.exceptions.CuponNoVigenteException;
-import com.nahuel.ecommerce.exceptions.CuponYaAplicadoException;
-import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
-import com.nahuel.ecommerce.exceptions.ReglaNegocioException;
+import com.nahuel.ecommerce.exceptions.*;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.CuponesRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -277,7 +271,7 @@ class CuponServiceImpTest {
 
                 assertThatThrownBy(() -> cuponService.aplicarCupon(idCarrito, "DESCUENTO10", idUsuario))
                         .as("No debe permitir aplicar el cupón si el subtotal del carrito no alcanza el monto mínimo exigido")
-                        .isInstanceOf(ReglaNegocioException.class);
+                        .isInstanceOf(MontoMinimoNoAlcanzadoException.class);
 
                 verify(carritoRepository, never()).save(any(Carrito.class));
             }

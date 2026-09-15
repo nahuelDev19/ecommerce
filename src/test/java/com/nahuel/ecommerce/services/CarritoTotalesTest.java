@@ -51,8 +51,6 @@ class CarritoTotalesTest {
     @Mock
     private ProductoRepository productoRepository;
 
-    @Mock
-    private CarritoService carritoService;
 
     @InjectMocks
     private CarritoServiceImp carritoServiceImp;

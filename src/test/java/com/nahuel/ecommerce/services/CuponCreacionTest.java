@@ -137,15 +137,15 @@ class CuponCreacionTest {
         }
 
         @Test
-        @DisplayName("Crear cupón de porcentaje con descuento mayor a 99% lanza ReglaNegocioException")
-        void crearCupon_porcentajeMayorA99_lanzaReglaNegocioException() {
+        @DisplayName("Crear cupón de porcentaje con descuento mayor a 100% lanza ReglaNegocioException")
+        void crearCupon_porcentajeMayorA100_lanzaReglaNegocioException() {
             // Given
             cuponDtoBase.setTipoDescuento(TipoDescuento.PORCENTAJE);
             cuponDtoBase.setValorDescuento(new BigDecimal("100.00"));
 
             // When / Then
             assertThatThrownBy(() -> cuponServiceImp.crearCupon(cuponDtoBase))
-                    .as("El porcentaje de descuento no debe ser mayor a 99%")
+                    .as("El porcentaje de descuento no debe ser mayor a 100%")
                     .isInstanceOf(ReglaNegocioException.class)
                     .hasMessageContaining("El porcentaje del cupon no debe ser mayor o igual a 100%");
 
