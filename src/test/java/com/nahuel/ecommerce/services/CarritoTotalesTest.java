@@ -14,6 +14,7 @@ import com.nahuel.ecommerce.repositories.ItemCarritoRepository;
 import com.nahuel.ecommerce.repositories.ProductoRepository;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import com.nahuel.ecommerce.support.CarritoTestFactory;
+import com.nahuel.ecommerce.support.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -68,9 +69,7 @@ class CarritoTotalesTest {
 
     @BeforeEach
     void setUp() {
-        ana = new Usuario();
-        ana.setId(UUID.fromString("11111111-1111-1111-1111-111111111111"));
-        ana.setNombreUsuario("Ana");
+        ana = TestDataFactory.ana();
 
         productoMil = new Producto();
         productoMil.setId(UUID.fromString("22222222-2222-2222-2222-222222222222"));

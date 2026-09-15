@@ -36,9 +36,16 @@ public class CuponServiceImp implements CuponeService {
     public CuponDtoResponse crearCupon(CuponDto dto) {
 
         Instant inicio= dto.getIniciadoEn() == null ? Instant.now(): dto.getIniciadoEn();
+        if (dto.getTerminadoEn() == null) {
+            throw new ReglaNegocioException("La fecha de finalización es obligatoria");
+        }
 
+        if (dto.getValorDescuento() == null
+                || dto.getValorDescuento().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ReglaNegocioException("El valor del descuento debe ser mayor a 0");
+        }
         // validar para asegurar que terminado en ocurra despues de inicio
-        if (dto.getTerminadoEn().compareTo(inicio) < 0) {
+        if (dto.getTerminadoEn().compareTo(inicio) < 0 ) {
             throw new ReglaNegocioException("Terminado en no puede ser anterior a IniciadoEn");
         }
 
@@ -162,8 +169,8 @@ public class CuponServiceImp implements CuponeService {
         if (ahora.isAfter(cupon.getTerminaEn())) {
             throw new CuponExpiradoException(cupon.getCodigoCupon());
         }
-        if (carrito.getEstadoCarrito()==EstadoCarrito.ABANDONADO){
-            throw new CarritoNoModificableException("El Carrito esta Desactivado");
+        if (carrito.getEstadoCarrito()!=EstadoCarrito.ACTIVO){
+            throw new CarritoNoModificableException("Solo un carrito ACTIVO puede recibir un cupón");
         }
         if (carrito.getCupon()!=null){
             throw new CuponYaAplicadoException();

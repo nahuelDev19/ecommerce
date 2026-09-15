@@ -16,6 +16,7 @@ import java.util.UUID;
 public class TestDataFactory {
 
     public static final UUID ID_ANA = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    public static final UUID ID_BETO = UUID.fromString("00000000-0000-0000-0000-000000000002");
     public static final UUID ID_ADMIN = UUID.fromString("00000000-0000-0000-0000-000000000003");
     public static final UUID ID_INACTIVO = UUID.fromString("00000000-0000-0000-0000-000000000004");
 
@@ -32,6 +33,18 @@ public class TestDataFactory {
                 .build();
     }
 
+    /** Usuario cliente activo (Beto), usado como atacante en los tests de IDOR. */
+    public static Usuario beto() {
+        return Usuario.builder()
+                .id(ID_BETO)
+                .nombreUsuario("beto-cliente")
+                .email("beto@test.com")
+                .contrasena("password-test-123")
+                .activo(true)
+                .rol(Rol.CLIENTE)
+                .origenRegistro(OrigenRegistro.LOCAL)
+                .build();
+    }
 
     /** Usuario administrador activo. */
     public static Usuario admin() {

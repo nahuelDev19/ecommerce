@@ -239,6 +239,31 @@ class CuponServiceImpTest {
                 assertThrows(CarritoNoModificableException.class,
                         () -> cuponService.aplicarCupon(idCarrito, "DESCUENTO10", idUsuario));
             }
+            @Test
+            @DisplayName("Carrito expirado -> CarritoNoModificableException")
+            void aplicarCupon_carritoExpirado_lanzaCarritoNoModificable() {
+                carrito.setEstadoCarrito(EstadoCarrito.EXPIRADO);
+
+                when(carritoRepository.findByIdAndUsuarioId(idCarrito, idUsuario))
+                        .thenReturn(Optional.of(carrito));
+                when(cuponesRepository.findByCodigoCupon("DESCUENTO10"))
+                        .thenReturn(Optional.of(cuponVigente));
+
+                assertThrows(CarritoNoModificableException.class,
+                        () -> cuponService.aplicarCupon(idCarrito, "DESCUENTO10", idUsuario));
+            } @Test
+            @DisplayName("Carrito ordenado -> CarritoNoModificableException")
+            void aplicarCupon_carritoOrdenado_lanzaCarritoNoModificable() {
+                carrito.setEstadoCarrito(EstadoCarrito.ORDENADO);
+
+                when(carritoRepository.findByIdAndUsuarioId(idCarrito, idUsuario))
+                        .thenReturn(Optional.of(carrito));
+                when(cuponesRepository.findByCodigoCupon("DESCUENTO10"))
+                        .thenReturn(Optional.of(cuponVigente));
+
+                assertThrows(CarritoNoModificableException.class,
+                        () -> cuponService.aplicarCupon(idCarrito, "DESCUENTO10", idUsuario));
+            }
 
             @Test
             @DisplayName("Subtotal menor al monto mínimo exigido por el cupón -> rechaza la aplicación")
