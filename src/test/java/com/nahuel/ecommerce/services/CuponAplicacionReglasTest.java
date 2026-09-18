@@ -12,6 +12,8 @@ import com.nahuel.ecommerce.exceptions.CuponInvalidoException;
 import com.nahuel.ecommerce.exceptions.CuponNoVigenteException;
 import com.nahuel.ecommerce.exceptions.CuponYaAplicadoException;
 import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
+import com.nahuel.ecommerce.mappers.CarritoMapper;
+import com.nahuel.ecommerce.mappers.ItemCarritoMapper;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.CuponesRepository;
 import com.nahuel.ecommerce.support.CarritoTestFactory;
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -44,6 +47,15 @@ class CuponAplicacionReglasTest {
 
     @Mock
     private CuponesRepository cuponesRepository;
+
+    @Spy
+    private ItemCarritoMapper itemCarritoMapper = new ItemCarritoMapper();
+
+    @Spy
+    private CalculadoraCarrito calculadoraCarrito = new CalculadoraCarrito();
+
+    @Spy
+    private CarritoMapper carritoMapper = new CarritoMapper(itemCarritoMapper, calculadoraCarrito);
 
     @InjectMocks
     private CuponServiceImp cuponServiceImp;

@@ -6,6 +6,8 @@ import com.nahuel.ecommerce.dtos.CuponDtoResponse;
 import com.nahuel.ecommerce.dtos.ItemCarritoDto;
 import com.nahuel.ecommerce.entitys.*;
 import com.nahuel.ecommerce.exceptions.*;
+import com.nahuel.ecommerce.mappers.CarritoMapper;
+import com.nahuel.ecommerce.mappers.CuponMapper;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.CuponesRepository;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
@@ -31,6 +33,9 @@ public class CuponServiceImp implements CuponeService {
 
     private final CarritoRepository carritoRepository;
     private final CuponesRepository cuponesRepository;
+    private final CarritoMapper carritoMapper;
+    private final CuponMapper cuponMapper;
+
 
     @Override
     public CuponDtoResponse crearCupon(CuponDto dto) {
@@ -74,7 +79,7 @@ public class CuponServiceImp implements CuponeService {
         );
 
         Cupon cuponGuardado = cuponesRepository.save(nuevoCupon);
-        return cuponMapper(cuponGuardado);
+        return cuponMapper.toResponse(cuponGuardado);
     }
 
 
@@ -82,7 +87,7 @@ public class CuponServiceImp implements CuponeService {
     public List<CuponDtoResponse> listarCupones() {
         return cuponesRepository.findAll()
                 .stream()
-                .map(this::cuponMapper)
+                .map(cuponMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -90,7 +95,7 @@ public class CuponServiceImp implements CuponeService {
     public List<CuponDtoResponse> listarCuponesPorEstadoActivo() {
         return cuponesRepository.findAll().stream()
                 .filter(c -> c.getEstadoCupon() == ACTIVO)
-                .map(this::cuponMapper)
+                .map(cuponMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -98,7 +103,7 @@ public class CuponServiceImp implements CuponeService {
     public List<CuponDtoResponse> listarCuponesPorEstadoDesactivo() {
         return cuponesRepository.findAll().stream()
                 .filter(c -> c.getEstadoCupon()== DESACTIVO)
-                .map(this::cuponMapper)
+                .map(cuponMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -130,7 +135,7 @@ public class CuponServiceImp implements CuponeService {
     public CuponDtoResponse buscarCuponId(UUID id) {
         Cupon cupon = cuponesRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Cupon no encontrado: " + id));
-        return cuponMapper(cupon);
+        return cuponMapper.toResponse(cupon);
     }
 
     //--------------------------------------
@@ -139,7 +144,7 @@ public class CuponServiceImp implements CuponeService {
     public CuponDtoResponse buscarPorCodigo(String codigo) {
         Cupon cupon= cuponesRepository.findByCodigoCupon(codigo.toUpperCase())
                 .orElseThrow(()-> new RecursoNoEncontradoException("codigo no encontrado"));
-        return cuponMapper(cupon);
+        return cuponMapper.toResponse(cupon);
     }
 
     @Override
@@ -155,7 +160,7 @@ public class CuponServiceImp implements CuponeService {
         carrito.setUltimaInteraccion(Instant.now());
 
         carritoRepository.save(carrito);
-        return toDto(carrito);
+        return carritoMapper.toDto(carrito);
     }
 
     private void validarAplicacionCupon(Cupon cupon, Carrito carrito ){
@@ -181,7 +186,7 @@ public class CuponServiceImp implements CuponeService {
         if (cupon.getMontoMinimoCarrito() != null &&
                 cupon.getMontoMinimoCarrito().compareTo(BigDecimal.ZERO) > 0) {
 
-            BigDecimal subtotal = calcularSubtotal(carrito);
+            BigDecimal subtotal = carritoMapper.toDto(carrito).getSubtotal();
             if (subtotal.compareTo(cupon.getMontoMinimoCarrito()) < 0) {
                 throw new MontoMinimoNoAlcanzadoException("El subtotal del carrito no alcanza el monto mínimo requerido para usar este cupón.");            }
         }
@@ -195,104 +200,12 @@ public class CuponServiceImp implements CuponeService {
         carrito.setCupon(null);
         carrito.setUltimaInteraccion(Instant.now());
         carritoRepository.save(carrito);
-        return toDto(carrito);
+        return carritoMapper.toDto(carrito);
     }
 
 
-    private CuponDtoResponse cuponMapper(Cupon cupon) {
-        CuponDtoResponse resp = new CuponDtoResponse();
-        resp.setId(cupon.getId());
-        resp.setCodigoCupon(cupon.getCodigoCupon());
-        resp.setDescripcion(cupon.getDescripcion());
-        resp.setEstadoCupon(cupon.getEstadoCupon());
-        resp.setAlcanceCupon(cupon.getAlcanceCupon());
-        resp.setTipoDescuento(cupon.getTipoDescuento());
-        resp.setValorDescuento(cupon.getValorDescuento());
-        resp.setMoneda(cupon.getMoneda());
-        resp.setMontoMinimoCarrito(cupon.getMontoMinimoCarrito());
-        resp.setLimiteUsoPorUsuario(cupon.getLimiteUsoPorUsuario());
-        resp.setIniciadoEn(cupon.getIniciadoEn());
-        resp.setTerminaEn(cupon.getTerminaEn());
-        return resp;
-    }
-
-private CarritoDto toDto(Carrito carrito) {
-
-    CarritoDto dto = new CarritoDto();
-
-    BigDecimal subtotal = calcularSubtotal(carrito);
-    BigDecimal descuento = calcularDescuento(carrito, subtotal);
-    BigDecimal total = subtotal.subtract(descuento);
-
-    dto.setId(carrito.getId());
-    dto.setEstadoCarrito(carrito.getEstadoCarrito());
-    dto.setUsuarioId(carrito.getUsuario().getId());
-    dto.setCreadoEn(carrito.getCreadoEn());
-    dto.setActualizadoEn(carrito.getActualizadoEn());
-    dto.setUltimaInteraccion(carrito.getUltimaInteraccion());
-
-    dto.setItems(
-            carrito.getItems()
-                    .stream()
-                    .map(this::toDto)
-                    .toList()
-    );
-
-    dto.setSubtotal(subtotal);
-    dto.setDescuentoTotal(descuento);
-    dto.setTotal(total);
-
-    return dto;
-}
-    private BigDecimal calcularSubtotal(Carrito carrito) {
-        return carrito.getItems().stream()
-                .map(item -> item.getPrecioUnitario()
-                        .multiply(BigDecimal.valueOf(item.getCantidad())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
 
 
-    static BigDecimal calcularDescuento(Carrito carrito, BigDecimal subtotal) {
-
-        if (carrito.getCupon() == null) {
-            return BigDecimal.ZERO;
-        }
-
-        Cupon cupon = carrito.getCupon();
-        if(cupon.getMontoMinimoCarrito()!=null && subtotal.compareTo(cupon.getMontoMinimoCarrito())<0){
-            return BigDecimal.ZERO;
-        }
-
-        switch (cupon.getTipoDescuento()) {
-
-            case PORCENTAJE:
-                return subtotal
-                        .multiply(cupon.getValorDescuento())
-                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-
-            case MONTOFIJO:
-                return cupon.getValorDescuento().min(subtotal);
-
-            default:
-                return BigDecimal.ZERO;
-        }
-    }
-    private ItemCarritoDto toDto(ItemCarrito item) {
-
-        ItemCarritoDto dto = new ItemCarritoDto();
-
-        dto.setId(item.getId());
-        dto.setProductoId(item.getProducto().getId());
-        dto.setNombreProducto(item.getProducto().getNombre());
-        dto.setPrecioUnitario(item.getPrecioUnitario());
-        dto.setCantidad(item.getCantidad());
-        dto.setSubtotal(
-                item.getPrecioUnitario()
-                        .multiply(BigDecimal.valueOf(item.getCantidad()))
-        );
-
-        return dto;
-    }
 
 }
 

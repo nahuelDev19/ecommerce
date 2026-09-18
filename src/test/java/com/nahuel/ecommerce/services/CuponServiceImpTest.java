@@ -3,6 +3,9 @@ package com.nahuel.ecommerce.services;
 import com.nahuel.ecommerce.dtos.CarritoDto;
 import com.nahuel.ecommerce.entitys.*;
 import com.nahuel.ecommerce.exceptions.*;
+import com.nahuel.ecommerce.mappers.CarritoMapper;
+import com.nahuel.ecommerce.mappers.CuponMapper;
+import com.nahuel.ecommerce.mappers.ItemCarritoMapper;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.CuponesRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -42,6 +46,18 @@ class CuponServiceImpTest {
 
     @Mock
     private CuponesRepository cuponesRepository;
+
+    @Spy
+    private ItemCarritoMapper itemCarritoMapper = new ItemCarritoMapper();
+
+    @Spy
+    private CalculadoraCarrito calculadoraCarrito = new CalculadoraCarrito();
+
+    @Spy
+    private CarritoMapper carritoMapper = new CarritoMapper(itemCarritoMapper, calculadoraCarrito);
+
+    @Spy
+    private CuponMapper cuponMapper = new CuponMapper();
 
     @InjectMocks
     private CuponServiceImp cuponService;
@@ -290,7 +306,7 @@ class CuponServiceImpTest {
                 cuponService.quitarCupon(idCarrito, idUsuario);
 
                 BigDecimal subtotalActual = new BigDecimal("400.00");
-                BigDecimal descuentoCalculado = CuponServiceImp.calcularDescuento(carrito, subtotalActual);
+                BigDecimal descuentoCalculado = new CalculadoraCarrito().descuento(carrito.getCupon(), subtotalActual);
 
                 assertThat(descuentoCalculado)
                         .as("El descuento debe ser cero si el subtotal actual del carrito es menor al monto mínimo exigido por el cupón")
@@ -306,7 +322,7 @@ class CuponServiceImpTest {
                 BigDecimal subtotalReducido = new BigDecimal("400.00");
 
                 // When: Se calcula el descuento sobre el subtotal reducido
-                BigDecimal descuentoCalculado = CuponServiceImp.calcularDescuento(carrito, subtotalReducido);
+                BigDecimal descuentoCalculado = new CalculadoraCarrito().descuento(carrito.getCupon(), subtotalReducido);
 
                 // Then: El descuento debe ser 0.00 independientemente de que el cupón siga asociado
                 assertThat(descuentoCalculado)

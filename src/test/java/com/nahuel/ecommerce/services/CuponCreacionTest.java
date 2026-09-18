@@ -9,6 +9,9 @@ import com.nahuel.ecommerce.entitys.TipoDescuento;
 import com.nahuel.ecommerce.entitys.TipoMoneda;
 import com.nahuel.ecommerce.exceptions.CuponYaExisteException;
 import com.nahuel.ecommerce.exceptions.ReglaNegocioException;
+import com.nahuel.ecommerce.mappers.CarritoMapper;
+import com.nahuel.ecommerce.mappers.CuponMapper;
+import com.nahuel.ecommerce.mappers.ItemCarritoMapper;
 import com.nahuel.ecommerce.repositories.CuponesRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -38,6 +42,18 @@ class CuponCreacionTest {
 
     @Mock
     private CuponesRepository cuponesRepository;
+
+    @Spy
+    private ItemCarritoMapper itemCarritoMapper = new ItemCarritoMapper();
+
+    @Spy
+    private CalculadoraCarrito calculadoraCarrito = new CalculadoraCarrito();
+
+    @Spy
+    private CarritoMapper carritoMapper = new CarritoMapper(itemCarritoMapper, calculadoraCarrito);
+
+    @Spy
+    private CuponMapper cuponMapper = new CuponMapper();
 
     @InjectMocks
     private CuponServiceImp cuponServiceImp;

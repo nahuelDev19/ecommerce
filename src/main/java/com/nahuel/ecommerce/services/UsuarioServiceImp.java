@@ -4,6 +4,7 @@ import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.dtos.UsuarioDto;
 import com.nahuel.ecommerce.exceptions.AccesoDenegadoException;
 import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
+import com.nahuel.ecommerce.mappers.UsuarioMapper;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -11,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -21,15 +21,16 @@ public class UsuarioServiceImp implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UsuarioMapper usuarioMapper;
 
     @Override
     public UsuarioDto guardar(UsuarioDto dto) {
 
-        Usuario usuario = toEntity(dto);
+        Usuario usuario = usuarioMapper.toEntity(dto);
 
         usuario = usuarioRepository.save(usuario);
 
-        return toDto(usuario);
+        return usuarioMapper.toResumenDto(usuario);
     }
 
     @Override
@@ -37,7 +38,7 @@ public class UsuarioServiceImp implements UsuarioService {
 
         return usuarioRepository.findAll()
                 .stream()
-                .map(this::toDto)
+                .map(usuarioMapper::toResumenDto)
                 .toList();
     }
 
@@ -48,7 +49,7 @@ public class UsuarioServiceImp implements UsuarioService {
         }
 
         return usuarioRepository.findById(id)
-                .map(this::toDto)
+                .map(usuarioMapper::toResumenDto)
                 .orElseThrow(() ->
                         new RecursoNoEncontradoException("Usuario no encontrado")
                 );
@@ -66,24 +67,7 @@ public class UsuarioServiceImp implements UsuarioService {
         usuarioRepository.delete(usuario);
     }
 
-    private UsuarioDto toDto(Usuario usuario) {
-
-        UsuarioDto dto = new UsuarioDto();
-
-        dto.setNombreUsuario(usuario.getNombreUsuario());
-        dto.setEmail(usuario.getEmail());
 
 
-        return dto;
-    }
 
-    private Usuario toEntity(UsuarioDto dto) {
-
-        Usuario usuario = new Usuario();
-
-        usuario.setNombreUsuario(dto.getNombreUsuario());
-        usuario.setEmail(dto.getEmail());
-
-        return usuario;
-    }
 }

@@ -6,6 +6,7 @@ import com.nahuel.ecommerce.dtos.ProductoDto;
 import com.nahuel.ecommerce.entitys.Producto;
 import com.nahuel.ecommerce.exceptions.ProductoYaRegistradoException;
 import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
+import com.nahuel.ecommerce.mappers.ProductoMapper;
 import com.nahuel.ecommerce.repositories.ProductoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,7 @@ import java.util.UUID;
 public class ProductoServiceImp implements ProductoService {
 
     private final ProductoRepository productoRepository;
+    private final ProductoMapper productoMapper;
 
     public ProductoDto guardarProducto(ProductoDto dto) {
         String nombreNormalizado = dto.getNombre().trim();
@@ -44,7 +46,7 @@ public class ProductoServiceImp implements ProductoService {
 
         Producto guardado = productoRepository.save(producto);
 
-        return convertirProductoDTO(guardado);
+        return productoMapper.toDto(guardado);
     }
 
     @Override
@@ -64,7 +66,7 @@ public class ProductoServiceImp implements ProductoService {
         productoExistente.setFechaDescontinuado(dto.getFechaDescontinuado());
 
         Producto actualizado = productoRepository.save(productoExistente);
-        return convertirProductoDTO(actualizado);
+        return productoMapper.toDto(actualizado);
     }
 
 
@@ -85,7 +87,7 @@ public class ProductoServiceImp implements ProductoService {
         Page <Producto> resultado = productoRepository.buscarConFiltros(
                 dto.getNombre(), dto.getPrecioMinimo(), dto.getPrecioMaximo(),dto.getSoloActivos(), pageable);
 
-        return resultado.map(this::convertirProductoDTO);
+        return resultado.map(productoMapper::toDto);
     }
 
 
@@ -100,30 +102,20 @@ public class ProductoServiceImp implements ProductoService {
     @Override
     public List<ProductoDto> listarTodos() {
         List<Producto> listDto= productoRepository.findAll();
-        return listDto.stream().map(this::convertirProductoDTO).toList();
+        return listDto.stream().map(productoMapper::toDto).toList();
     }
 
     @Override
     public List<ProductoDto> listarDesactivos() {
-        return productoRepository.findAllDesactivos().stream().map(this::convertirProductoDTO).toList();
+        return productoRepository.findAllDesactivos().stream().map(productoMapper::toDto).toList();
     }
 
     @Override
     public List<ProductoDto> listarDescontinuados() {
         List<Producto> listDto= productoRepository.findAll();
-        return listDto.stream().map(this::convertirProductoDTO).filter(p-> !p.getActivo()).toList();
+        return listDto.stream().map(productoMapper::toDto).filter(p-> !p.getActivo()).toList();
     }
 
-    private ProductoDto convertirProductoDTO(Producto producto){
-        return new ProductoDto(
-                producto.getId(),
-                producto.getNombre(),
-                producto.getDescripcion(),
-                producto.getPrecioBase(),
-                producto.getMoneda(),
-                producto.getActivo(),
-                producto.getFechaDescontinuado()
-        );
-    }
+
 
 }

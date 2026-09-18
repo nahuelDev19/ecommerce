@@ -2,7 +2,6 @@ package com.nahuel.ecommerce.services;
 
 import com.nahuel.ecommerce.dtos.CarritoDto;
 import com.nahuel.ecommerce.dtos.EliminarItemCarritoDto;
-import com.nahuel.ecommerce.dtos.ItemCarritoDto;
 import com.nahuel.ecommerce.dtos.ItemRequestDto;
 import com.nahuel.ecommerce.entitys.Carrito;
 import com.nahuel.ecommerce.entitys.ItemCarrito;
@@ -10,6 +9,7 @@ import com.nahuel.ecommerce.entitys.Producto;
 import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
 import com.nahuel.ecommerce.exceptions.ReglaNegocioException;
+import com.nahuel.ecommerce.mappers.CarritoMapper;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.ItemCarritoRepository;
 import com.nahuel.ecommerce.repositories.ProductoRepository;
@@ -18,13 +18,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
 import static com.nahuel.ecommerce.entitys.EstadoCarrito.ACTIVO;
-import static com.nahuel.ecommerce.services.CuponServiceImp.calcularDescuento;
 
 @Transactional
 @RequiredArgsConstructor
@@ -35,6 +33,7 @@ public class ItemCarritoServiceImp implements ItemCarritoService {
     private final ProductoRepository productoRepository;
     private final CarritoRepository carritoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final CarritoMapper carritoMapper;
 
     @Override
     public CarritoDto agregarItem(ItemRequestDto dto, UUID idUsuario) {
@@ -78,7 +77,7 @@ public class ItemCarritoServiceImp implements ItemCarritoService {
         carrito.setActualizadoEn(ahora);
         carrito.setUltimaInteraccion(ahora);
 
-        return toDto(carrito);
+        return carritoMapper.toDto(carrito);
     }
 
     @Override
@@ -111,7 +110,7 @@ public class ItemCarritoServiceImp implements ItemCarritoService {
 
         carritoRepository.save(carrito);
 
-        return toDto(carrito);
+        return carritoMapper.toDto(carrito);
     }
 
     @Override
@@ -134,48 +133,8 @@ public class ItemCarritoServiceImp implements ItemCarritoService {
 
         carritoRepository.save(carrito);
 
-        return toDto(carrito);
+        return carritoMapper.toDto(carrito);
     }
 
-    private CarritoDto toDto(Carrito carrito) {
-        BigDecimal subtotal = calcularSubtotal(carrito);
-        BigDecimal descuento = calcularDescuento(carrito, subtotal);
-        BigDecimal total = subtotal.subtract(descuento);
 
-        CarritoDto dto = new CarritoDto();
-
-        dto.setId(carrito.getId());
-        dto.setEstadoCarrito(carrito.getEstadoCarrito());
-        dto.setUsuarioId(carrito.getUsuario().getId());
-        dto.setCreadoEn(carrito.getCreadoEn());
-        dto.setActualizadoEn(carrito.getActualizadoEn());
-        dto.setUltimaInteraccion(carrito.getUltimaInteraccion());
-
-        dto.setSubtotal(subtotal);
-        dto.setDescuentoTotal(descuento);
-        dto.setTotal(total);
-
-        dto.setItems(carrito.getItems().stream().map(this::toDto).toList());
-
-        return dto;
-    }
-
-    private ItemCarritoDto toDto(ItemCarrito item) {
-        ItemCarritoDto dto = new ItemCarritoDto();
-
-        dto.setId(item.getId());
-        dto.setProductoId(item.getProducto().getId());
-        dto.setNombreProducto(item.getProducto().getNombre());
-        dto.setPrecioUnitario(item.getPrecioUnitario());
-        dto.setCantidad(item.getCantidad());
-        dto.setSubtotal(item.getPrecioUnitario().multiply(BigDecimal.valueOf(item.getCantidad())));
-
-        return dto;
-    }
-
-    private BigDecimal calcularSubtotal(Carrito carrito) {
-        return carrito.getItems().stream()
-                .map(item -> item.getPrecioUnitario().multiply(BigDecimal.valueOf(item.getCantidad())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
 }

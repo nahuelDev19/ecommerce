@@ -29,6 +29,7 @@ public class ItemCarrito {
 
     private BigDecimal precioUnitario;
 
+    private Instant precioAgregadoEn;
 
     private Instant actualizadoEn;
 

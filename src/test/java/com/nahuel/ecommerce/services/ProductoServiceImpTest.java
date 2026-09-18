@@ -7,6 +7,7 @@ import com.nahuel.ecommerce.entitys.Producto;
 import com.nahuel.ecommerce.entitys.TipoMoneda;
 import com.nahuel.ecommerce.exceptions.ProductoYaRegistradoException;
 import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
+import com.nahuel.ecommerce.mappers.ProductoMapper;
 import com.nahuel.ecommerce.repositories.ProductoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -40,6 +42,9 @@ class ProductoServiceImpTest {
 
     @Mock
     private ProductoRepository productoRepository;
+
+    @Spy
+    private ProductoMapper productoMapper = new ProductoMapper();
 
     @InjectMocks
     private ProductoServiceImp productoServiceImp;

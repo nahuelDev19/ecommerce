@@ -8,6 +8,8 @@ import com.nahuel.ecommerce.entitys.ItemCarrito;
 import com.nahuel.ecommerce.entitys.Producto;
 import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
+import com.nahuel.ecommerce.mappers.CarritoMapper;
+import com.nahuel.ecommerce.mappers.ItemCarritoMapper;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.ItemCarritoRepository;
 import com.nahuel.ecommerce.repositories.ProductoRepository;
@@ -21,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -49,6 +52,15 @@ class ItemCarritoPrecioTest {
 
  @Mock
  private UsuarioRepository usuarioRepository;
+
+ @Spy
+ private ItemCarritoMapper itemCarritoMapper = new ItemCarritoMapper();
+
+ @Spy
+ private CalculadoraCarrito calculadoraCarrito = new CalculadoraCarrito();
+
+ @Spy
+ private CarritoMapper carritoMapper = new CarritoMapper(itemCarritoMapper, calculadoraCarrito);
 
  @InjectMocks
  private ItemCarritoServiceImp itemCarritoServiceImp;
