@@ -58,22 +58,22 @@ public class ItemCarritoServiceImp implements ItemCarritoService {
             throw new ReglaNegocioException("Cantidad no puede ser menor a 1 o negativo");
         }
 
+        Instant ahora=Instant.now();
         if (itemExistente.isPresent()) {
             ItemCarrito item = itemExistente.get();
             item.setCantidad(item.getCantidad() + dto.getCantidad());
             itemCarritoRepository.save(item);
         } else {
             ItemCarrito item = new ItemCarrito();
+            item.congelarPrecio(producto.getPrecioBase(),ahora);
             item.setCarrito(carrito);
             item.setProducto(producto);
             item.setCantidad(dto.getCantidad());
-            item.setPrecioUnitario(producto.getPrecioBase());
 
             carrito.getItems().add(item);
             itemCarritoRepository.save(item);
         }
 
-        Instant ahora = Instant.now();
         carrito.setActualizadoEn(ahora);
         carrito.setUltimaInteraccion(ahora);
 

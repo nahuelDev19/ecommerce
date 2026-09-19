@@ -50,6 +50,7 @@ public class CarritoTestFactory {
         item.setProducto(producto);
         item.setCantidad(cantidad);
         item.setPrecioUnitario(precioUnitario);
+        item.setPrecioAgregadoEn(Instant.now());
         item.setActualizadoEn(Instant.now());
 
         carrito.getItems().add(item);

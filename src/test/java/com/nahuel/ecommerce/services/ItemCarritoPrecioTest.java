@@ -27,6 +27,8 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -64,6 +66,9 @@ class ItemCarritoPrecioTest {
 
  @InjectMocks
  private ItemCarritoServiceImp itemCarritoServiceImp;
+
+ @InjectMocks
+ private CarritoServiceImp carritoServiceImp;
 
  private Usuario ana;
  private Producto productoRemera;
@@ -113,6 +118,9 @@ class ItemCarritoPrecioTest {
            .as("El precio unitario guardado en el ítem debe ser igual al precio base del producto ($1500.00)")
            .isEqualByComparingTo(new BigDecimal("1500.00"));
 
+   assertThat(itemGuardado.getPrecioAgregadoEn())
+           .as("Al crear el ítem debe quedar armada la ventana de 48h")
+           .isNotNull();
    assertThat(resultado.getItems().get(0).getSubtotal())
            .as("El subtotal del ítem para 2 unidades de $1500 debe ser $3000.00")
            .isEqualByComparingTo(new BigDecimal("3000.00"));
@@ -179,6 +187,96 @@ class ItemCarritoPrecioTest {
 
    verify(itemCarritoRepository, never()).save(any());
   }
+ }
+
+ @Test
+ @DisplayName("Ítem con precio congelado VENCIDO toma el precio de lista actual")
+ void itemConSnapshotVencido_tomaPrecioDeLista() {
+  // Given: ítem agregado hace 49 horas con precio capturado $1000
+  Carrito carrito = CarritoTestFactory.carritoCon(ana, productoRemera, 1, new BigDecimal("1000.00"));
+  ItemCarrito item = carrito.getItems().iterator().next();
+
+  // Back-dateamos el ancla. NO se espera ni se mockea el reloj:
+  // como la fecha es un dato, la movemos nosotros.
+  item.setPrecioAgregadoEn(Instant.now().minus(Duration.ofHours(49)));
+
+  // El catálogo subió a $2500 mientras la ventana estaba abierta
+  productoRemera.setPrecioBase(new BigDecimal("2500.00"));
+
+  // When
+  BigDecimal precio = item.precioVigente(Instant.now());
+
+  // Then: ya no vale el snapshot, vale la lista
+  assertThat(precio).isEqualByComparingTo("2500.00");
+ }
+
+ @Test
+ @DisplayName("Ítem con precio congelado vigente (47h) mantiene el precio capturado")
+ void itemConSnapshotVigente_mantienePrecioCapturado() {
+  Carrito carrito = CarritoTestFactory.carritoCon(ana, productoRemera, 1, new BigDecimal("1000.00"));
+  ItemCarrito item = carrito.getItems().iterator().next();
+
+  item.setPrecioAgregadoEn(Instant.now().minus(Duration.ofHours(47)));
+  productoRemera.setPrecioBase(new BigDecimal("2500.00"));
+
+  assertThat(item.precioVigente(Instant.now())).isEqualByComparingTo("1000.00");
+ }
+ @Test
+ @DisplayName("El total del carrito se recalcula cuando el snapshot vence")
+ void carritoConSnapshotVencido_recalculaTotal() {
+  Carrito carrito = CarritoTestFactory.carritoCon(ana, productoRemera, 2, new BigDecimal("1000.00"));
+  carrito.getItems().iterator().next()
+          .setPrecioAgregadoEn(Instant.now().minus(Duration.ofHours(49)));
+  productoRemera.setPrecioBase(new BigDecimal("2500.00"));
+
+  when(carritoRepository.findByUsuarioIdAndEstadoCarrito(ana.getId(), EstadoCarrito.ACTIVO))
+          .thenReturn(Optional.of(carrito));
+
+  CarritoDto resultado = carritoServiceImp.buscarCarritoActivoDelUsuarioAutenticado(ana.getId());
+  var itemDto = resultado.getItems().get(0);
+
+  // 1) Invariante: el subtotal tiene que salir del MISMO precio que se muestra.
+  assertThat(itemDto.getSubtotal())
+          .as("El subtotal del ítem debe ser coherente con su precio unitario")
+          .isEqualByComparingTo(itemDto.getPrecioUnitario()
+                  .multiply(BigDecimal.valueOf(itemDto.getCantidad())));
+
+  // 2) Y además, el precio tiene que ser el correcto contra el catálogo.
+  assertThat(itemDto.getPrecioUnitario())
+          .as("Ya vencida la ventana, el ítem debe mostrar el precio de lista")
+          .isEqualByComparingTo("2500.00");
+  assertThat(resultado.getSubtotal()).isEqualByComparingTo("5000.00"); // 2 x 2500, no 2 x 1000
+ }
+ @Test
+ @DisplayName("Borde exacto: a las 48h justas ya vale el precio de lista")
+ void bordeDe48Horas_esExclusivo() {
+  Carrito carrito = CarritoTestFactory.carritoCon(ana, productoRemera, 1, new BigDecimal("1000.00"));
+  ItemCarrito item = carrito.getItems().iterator().next();
+
+  // Usamos un instante FIJO en vez de Instant.now(). Con Instant.now() el
+  // borde depende de cuántos nanosegundos tarden en correr las dos líneas,
+  // y el test se vuelve frágil. Pasando el instante a mano, es determinista.
+  Instant ancla = Instant.parse("2026-01-01T00:00:00Z");
+  item.setPrecioAgregadoEn(ancla);
+  productoRemera.setPrecioBase(new BigDecimal("2500.00"));
+
+  Instant unMsAntes = ancla.plus(Duration.ofHours(48)).minusMillis(1);
+  Instant justoDespues = ancla.plus(Duration.ofHours(48));
+
+  assertThat(item.precioVigente(unMsAntes)).isEqualByComparingTo("1000.00");
+  assertThat(item.precioVigente(justoDespues)).isEqualByComparingTo("2500.00");
+ }
+ @Test
+ @DisplayName("Ítem sin ancla (fila previa al snapshot) respeta el precio guardado")
+ void itemSinAncla_respetaPrecioGuardado() {
+  Carrito carrito = CarritoTestFactory.carritoCon(ana, productoRemera, 1, new BigDecimal("1000.00"));
+  ItemCarrito item = carrito.getItems().iterator().next();
+
+  item.setPrecioAgregadoEn(null);   // fila previa a la migración V3, sin fecha
+  productoRemera.setPrecioBase(new BigDecimal("2500.00"));
+
+  // Sin ancla no se puede calcular vencimiento, así que se respeta lo guardado
+  assertThat(item.precioVigente(Instant.now())).isEqualByComparingTo("1000.00");
  }
 }
 

@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 @Component
@@ -18,7 +19,8 @@ public class CarritoMapper {
     private final CalculadoraCarrito calculadoraCarrito;
 
     public CarritoDto toDto(Carrito carrito) {
-        List<ItemCarritoDto> items = itemCarritoMapper.toDto(carrito.getItems());
+        Instant ahora= Instant.now();
+        List<ItemCarritoDto> items = itemCarritoMapper.toDto(carrito.getItems(),ahora);
         BigDecimal subtotal  = calculadoraCarrito.subtotal(items);
         BigDecimal descuento = calculadoraCarrito.descuento(carrito.getCupon(), subtotal);
 

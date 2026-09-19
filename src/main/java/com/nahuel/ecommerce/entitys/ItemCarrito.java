@@ -6,12 +6,18 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
 @Getter @Setter
 @Entity
 public class ItemCarrito {
+
+    public static final Duration VIGENCIA_PRECIO = Duration.ofHours(48);
+
+
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -34,15 +40,23 @@ public class ItemCarrito {
     private Instant actualizadoEn;
 
 
-/*
-    private Carrito carrito;
-    private Producto producto;
-    private Integer cantidad;
-    private BigDecimal subTotal;
-    private BigDecimal total;
-    private Instant creadoEn;
+    public boolean precioCongeladoVigente(Instant ahora){
+        if(precioAgregadoEn==null){
+            return true;
+        }
+        return ahora.isBefore(precioAgregadoEn.plus(VIGENCIA_PRECIO));
+    }
 
 
- */
+    public BigDecimal precioVigente(Instant ahora){
+        return precioCongeladoVigente(ahora)?
+                precioUnitario:
+                producto.getPrecioBase();
+    }
+
+    public void  congelarPrecio(BigDecimal precio,Instant ahora){
+        this.precioUnitario=precio;
+        this.precioAgregadoEn=ahora;
+    }
 
 }
