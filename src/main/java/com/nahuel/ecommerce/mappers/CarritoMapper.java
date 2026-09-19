@@ -19,7 +19,7 @@ public class CarritoMapper {
     private final CalculadoraCarrito calculadoraCarrito;
 
     public CarritoDto toDto(Carrito carrito) {
-        Instant ahora= Instant.now();
+        Instant ahora= Instant.now(); // correjir cuerencia sobre el origen de la fecha capturada/hora
         List<ItemCarritoDto> items = itemCarritoMapper.toDto(carrito.getItems(),ahora);
         BigDecimal subtotal  = calculadoraCarrito.subtotal(items);
         BigDecimal descuento = calculadoraCarrito.descuento(carrito.getCupon(), subtotal);

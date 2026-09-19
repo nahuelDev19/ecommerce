@@ -55,14 +55,12 @@ class ItemCarritoPrecioTest {
  @Mock
  private UsuarioRepository usuarioRepository;
 
- @Spy
- private ItemCarritoMapper itemCarritoMapper = new ItemCarritoMapper();
 
- @Spy
- private CalculadoraCarrito calculadoraCarrito = new CalculadoraCarrito();
+ private final ItemCarritoMapper itemCarritoMapper = new ItemCarritoMapper();
 
- @Spy
- private CarritoMapper carritoMapper = new CarritoMapper(itemCarritoMapper, calculadoraCarrito);
+ private final CalculadoraCarrito calculadoraCarrito = new CalculadoraCarrito();
+
+ private final CarritoMapper carritoMapper = new CarritoMapper(itemCarritoMapper, calculadoraCarrito);
 
  @InjectMocks
  private ItemCarritoServiceImp itemCarritoServiceImp;
@@ -278,6 +276,14 @@ class ItemCarritoPrecioTest {
   // Sin ancla no se puede calcular vencimiento, así que se respeta lo guardado
   assertThat(item.precioVigente(Instant.now())).isEqualByComparingTo("1000.00");
  }
+
+ @Test
+ @DisplayName("incrementar Cantidad no renueva la ventana de 48 horas ni vambia el precio congelado")
+ void agregarItem_productoExistente_noRenuevaVentana(){
+  //investigar abuso de logica e implementar test
+ }
+
+
 }
 
 /*
