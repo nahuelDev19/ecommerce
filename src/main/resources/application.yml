@@ -1,4 +1,13 @@
+
+
 spring:
+  serverlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 12MB
+      file-size-threshol: 2KB
+
   datasource:
     url: ${DB_URL}
     username: ${DB_USER}
@@ -12,12 +21,24 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+    jdbc:
+      batch_size: 500
     show-sql: false
+    order_insert: true
+    order_update: true
+
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:3600000}
 
-
+importacion:
+    max-tamanio-bytes: 10485760
+    max-filas: 50000
+    max-columnas: 50
+    max-largo-celda: 500
+    min-ratio-descompresion: 0.01   # anti zip bomb: hasta 100x de expansión
+    tamanio-lote: 500
+    directorio-temporal: ${java.io.tmpdir}/importaciones
 supabase:
   url: ${SUPABASE_URL}                    # https://xxxx.supabase.co
 

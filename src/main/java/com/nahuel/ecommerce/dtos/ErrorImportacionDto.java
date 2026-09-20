@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 public class ErrorImportacionDto {
 
 
-    private String  fila;
+    private String  nombre;
     private String error;
+    private int numeroFila;
+
 }

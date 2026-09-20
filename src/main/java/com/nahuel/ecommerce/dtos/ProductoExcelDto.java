@@ -12,6 +12,6 @@ public class ProductoExcelDto {
     private String moneda;
     private String precio;
     private String activo;
-
+    private int numeroFila;
 
 }
