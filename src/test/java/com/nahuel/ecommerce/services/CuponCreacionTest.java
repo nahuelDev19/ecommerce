@@ -12,6 +12,7 @@ import com.nahuel.ecommerce.exceptions.ReglaNegocioException;
 import com.nahuel.ecommerce.mappers.CarritoMapper;
 import com.nahuel.ecommerce.mappers.CuponMapper;
 import com.nahuel.ecommerce.mappers.ItemCarritoMapper;
+import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.CuponesRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,9 +20,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -42,20 +41,15 @@ class CuponCreacionTest {
 
     @Mock
     private CuponesRepository cuponesRepository;
+    @Mock
+    private CarritoRepository carritoRepository;
 
-    @Spy
+
     private ItemCarritoMapper itemCarritoMapper = new ItemCarritoMapper();
-
-    @Spy
     private CalculadoraCarrito calculadoraCarrito = new CalculadoraCarrito();
-
-    @Spy
     private CarritoMapper carritoMapper = new CarritoMapper(itemCarritoMapper, calculadoraCarrito);
-
-    @Spy
     private CuponMapper cuponMapper = new CuponMapper();
 
-    @InjectMocks
     private CuponServiceImp cuponServiceImp;
 
     private CuponDto cuponDtoBase;
@@ -63,6 +57,9 @@ class CuponCreacionTest {
 
     @BeforeEach
     void setUp() {
+
+        cuponServiceImp= new CuponServiceImp(carritoRepository,cuponesRepository,carritoMapper,cuponMapper);
+
         ahora = Instant.now();
 
         cuponDtoBase = new CuponDto();

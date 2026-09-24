@@ -11,9 +11,7 @@ import com.nahuel.ecommerce.repositories.CuponesRepository;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -44,19 +42,12 @@ class CuponServiceImpTest {
     @Mock
     private CuponesRepository cuponesRepository;
 
-    @Spy
+
     private ItemCarritoMapper itemCarritoMapper = new ItemCarritoMapper();
-
-    @Spy
     private CalculadoraCarrito calculadoraCarrito = new CalculadoraCarrito();
-
-    @Spy
     private CarritoMapper carritoMapper = new CarritoMapper(itemCarritoMapper, calculadoraCarrito);
-
-    @Spy
     private CuponMapper cuponMapper = new CuponMapper();
 
-    @InjectMocks
     private CuponServiceImp cuponService;
 
     private UUID idUsuario;
@@ -66,6 +57,9 @@ class CuponServiceImpTest {
 
     @BeforeEach
     void setUp() {
+
+        cuponService= new CuponServiceImp(carritoRepository,cuponesRepository,carritoMapper,cuponMapper);
+
         idUsuario = UUID.randomUUID();
         idCarrito = UUID.randomUUID();
 

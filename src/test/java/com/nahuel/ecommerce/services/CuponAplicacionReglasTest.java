@@ -13,6 +13,7 @@ import com.nahuel.ecommerce.exceptions.CuponNoVigenteException;
 import com.nahuel.ecommerce.exceptions.CuponYaAplicadoException;
 import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
 import com.nahuel.ecommerce.mappers.CarritoMapper;
+import com.nahuel.ecommerce.mappers.CuponMapper;
 import com.nahuel.ecommerce.mappers.ItemCarritoMapper;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.CuponesRepository;
@@ -48,16 +49,12 @@ class CuponAplicacionReglasTest {
     @Mock
     private CuponesRepository cuponesRepository;
 
-    @Spy
+
     private ItemCarritoMapper itemCarritoMapper = new ItemCarritoMapper();
-
-    @Spy
     private CalculadoraCarrito calculadoraCarrito = new CalculadoraCarrito();
-
-    @Spy
+    private CuponMapper cuponMapper= new CuponMapper();
     private CarritoMapper carritoMapper = new CarritoMapper(itemCarritoMapper, calculadoraCarrito);
 
-    @InjectMocks
     private CuponServiceImp cuponServiceImp;
 
     private Usuario ana;
@@ -65,6 +62,9 @@ class CuponAplicacionReglasTest {
 
     @BeforeEach
     void setUp() {
+
+        cuponServiceImp= new CuponServiceImp(carritoRepository,cuponesRepository,carritoMapper,cuponMapper);
+
         ana = new Usuario();
         ana.setId(UUID.fromString("11111111-1111-1111-1111-111111111111"));
         ana.setNombreUsuario("Ana");

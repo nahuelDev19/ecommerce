@@ -43,10 +43,8 @@ class ProductoServiceImpTest {
     @Mock
     private ProductoRepository productoRepository;
 
-    @Spy
     private ProductoMapper productoMapper = new ProductoMapper();
 
-    @InjectMocks
     private ProductoServiceImp productoServiceImp;
 
     private UUID productoId;
@@ -55,6 +53,7 @@ class ProductoServiceImpTest {
 
     @BeforeEach
     void setUp() {
+        productoServiceImp= new ProductoServiceImp(productoRepository,productoMapper);
         productoId = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
         productoBase = Producto.builder()

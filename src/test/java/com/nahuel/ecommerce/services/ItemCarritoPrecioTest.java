@@ -62,10 +62,9 @@ class ItemCarritoPrecioTest {
 
  private final CarritoMapper carritoMapper = new CarritoMapper(itemCarritoMapper, calculadoraCarrito);
 
- @InjectMocks
- private ItemCarritoServiceImp itemCarritoServiceImp;
 
- @InjectMocks
+
+ private ItemCarritoServiceImp itemCarritoServiceImp;
  private CarritoServiceImp carritoServiceImp;
 
  private Usuario ana;
@@ -73,6 +72,22 @@ class ItemCarritoPrecioTest {
 
  @BeforeEach
  void setUp() {
+  // Los @Mock YA están listos en este punto.
+  itemCarritoServiceImp = new ItemCarritoServiceImp(
+          itemCarritoRepository,
+          productoRepository,
+          carritoRepository,
+          usuarioRepository,
+          carritoMapper
+  );
+
+  // Ajustá el orden/parámetros al constructor real de CarritoServiceImp.
+  carritoServiceImp = new CarritoServiceImp(
+          carritoRepository,
+          usuarioRepository,
+          carritoMapper
+  );
+
   ana = new Usuario();
   ana.setId(UUID.fromString("11111111-1111-1111-1111-111111111111"));
   ana.setNombreUsuario("Ana");

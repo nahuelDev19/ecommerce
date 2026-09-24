@@ -16,9 +16,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -44,16 +42,11 @@ class CarritoServiceImpTest {
 
     @Mock
     private UsuarioRepository usuarioRepository;
-    @Spy
+
     private ItemCarritoMapper itemCarritoMapper = new ItemCarritoMapper();
-
-    @Spy
     private CalculadoraCarrito calculadoraCarrito = new CalculadoraCarrito();
-
-    @Spy
     private CarritoMapper carritoMapper = new CarritoMapper(itemCarritoMapper, calculadoraCarrito);
 
-    @InjectMocks
     private CarritoServiceImp carritoService;
 
     private UUID idUsuario;
@@ -61,6 +54,7 @@ class CarritoServiceImpTest {
 
     @BeforeEach
     void setUp() {
+        carritoService= new CarritoServiceImp(carritoRepository,usuarioRepository,carritoMapper);
         idUsuario = UUID.randomUUID();
         usuario = Usuario.builder()
                 .id(idUsuario)

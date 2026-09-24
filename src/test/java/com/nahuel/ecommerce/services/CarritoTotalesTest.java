@@ -9,6 +9,7 @@ import com.nahuel.ecommerce.entitys.ItemCarrito;
 import com.nahuel.ecommerce.entitys.Producto;
 import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.mappers.CarritoMapper;
+import com.nahuel.ecommerce.mappers.CuponMapper;
 import com.nahuel.ecommerce.mappers.ItemCarritoMapper;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.CuponesRepository;
@@ -22,9 +23,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -54,23 +53,14 @@ class CarritoTotalesTest {
     @Mock
     private ProductoRepository productoRepository;
 
-    @Spy
+
     private ItemCarritoMapper itemCarritoMapper = new ItemCarritoMapper();
-
-    @Spy
     private CalculadoraCarrito calculadoraCarrito = new CalculadoraCarrito();
-
-    @Spy
+    private CuponMapper cuponMapper= new CuponMapper();
     private CarritoMapper carritoMapper = new CarritoMapper(itemCarritoMapper, calculadoraCarrito);
 
-
-    @InjectMocks
     private CarritoServiceImp carritoServiceImp;
-
-    @InjectMocks
     private CuponServiceImp cuponServiceImp;
-
-    @InjectMocks
     private ItemCarritoServiceImp itemCarritoServiceImp;
 
     private Usuario ana;
@@ -79,6 +69,10 @@ class CarritoTotalesTest {
 
     @BeforeEach
     void setUp() {
+        carritoServiceImp = new CarritoServiceImp(carritoRepository,usuarioRepository,carritoMapper);
+        cuponServiceImp= new CuponServiceImp(carritoRepository,cuponesRepository,carritoMapper,cuponMapper);
+        itemCarritoServiceImp= new ItemCarritoServiceImp(itemCarritoRepository,productoRepository,carritoRepository,usuarioRepository,carritoMapper);
+
         ana = TestDataFactory.ana();
 
         productoMil = new Producto();
