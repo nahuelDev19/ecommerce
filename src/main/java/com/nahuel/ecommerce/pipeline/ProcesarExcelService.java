@@ -21,7 +21,7 @@ public class ProcesarExcelService {
         List<ProductoExcelDto> lista = new ArrayList<>();
 
         try (InputStream is = file.getInputStream();
-             Workbook workbook = new XSSFWorkbook(is);) {
+             Workbook workbook = WorkbookFactory.create(is);) {
             Sheet sheet = workbook.getSheetAt(0);
 
             Row headerRow= sheet.getRow(0);
