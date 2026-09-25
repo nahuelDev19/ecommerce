@@ -292,11 +292,47 @@ class ItemCarritoPrecioTest {
   assertThat(item.precioVigente(Instant.now())).isEqualByComparingTo("1000.00");
  }
 
- @Test
- @DisplayName("incrementar Cantidad no renueva la ventana de 48 horas ni vambia el precio congelado")
- void agregarItem_productoExistente_noRenuevaVentana(){
-  //investigar abuso de logica e implementar test
- }
+  @Test
+  @DisplayName("incrementar Cantidad no renueva la ventana de 48 horas ni cambia el precio congelado")
+  void agregarItem_productoExistente_noRenuevaVentana(){
+   // Given: ítem existente con precio congelado $1000 y ancla hace 47h (ventana vigente)
+   Carrito carrito = CarritoTestFactory.carritoCon(ana, productoRemera, 1, new BigDecimal("1000.00"));
+   ItemCarrito itemExistente = carrito.getItems().iterator().next();
+   Instant anclaOriginal = Instant.now().minus(Duration.ofHours(47));
+   itemExistente.setPrecioAgregadoEn(anclaOriginal);
+
+   // El catálogo sube mientras la ventana sigue abierta (tentación de recongelar precio y ventana)
+   productoRemera.setPrecioBase(new BigDecimal("2500.00"));
+
+   ItemRequestDto dto = new ItemRequestDto();
+   dto.setProductoId(productoRemera.getId());
+   dto.setCantidad(2);
+
+   when(usuarioRepository.findById(ana.getId())).thenReturn(Optional.of(ana));
+   when(productoRepository.findById(productoRemera.getId())).thenReturn(Optional.of(productoRemera));
+   when(carritoRepository.findByUsuarioIdAndEstadoCarrito(ana.getId(), EstadoCarrito.ACTIVO))
+           .thenReturn(Optional.of(carrito));
+   when(itemCarritoRepository.findByCarritoIdAndProductoId(carrito.getId(), productoRemera.getId()))
+           .thenReturn(Optional.of(itemExistente));
+
+   // When
+   itemCarritoServiceImp.agregarItem(dto, ana.getId());
+
+   // Then: la cantidad crece, pero ni el precio ni el ancla se tocan
+   assertThat(itemExistente.getCantidad())
+           .as("La cantidad debe incrementarse de 1 a 3")
+           .isEqualTo(3);
+
+   assertThat(itemExistente.getPrecioUnitario())
+           .as("El precio congelado no debe cambiar aunque el catálogo haya subido a $2500")
+           .isEqualByComparingTo(new BigDecimal("1000.00"));
+
+   assertThat(itemExistente.getPrecioAgregadoEn())
+           .as("El ancla de la ventana de 48h no debe renovarse al incrementar cantidad")
+           .isEqualTo(anclaOriginal);
+
+   verify(itemCarritoRepository).save(itemExistente);
+  }
 
 
 }
