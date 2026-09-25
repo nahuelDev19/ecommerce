@@ -37,6 +37,9 @@ public class ItemCarritoServiceImp implements ItemCarritoService {
 
     @Override
     public CarritoDto agregarItem(ItemRequestDto dto, UUID idUsuario) {
+        Instant ahora = Instant.now();
+
+
         Usuario usuario = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
         Producto producto = productoRepository.findById(dto.getProductoId())
@@ -48,7 +51,7 @@ public class ItemCarritoServiceImp implements ItemCarritoService {
                     Carrito carrito1 = new Carrito();
                     carrito1.setUsuario(usuario);
                     carrito1.setEstadoCarrito(ACTIVO);
-                    carrito1.setCreadoEn(Instant.now());
+                    carrito1.setCreadoEn(ahora);
                     return carritoRepository.save(carrito1);
                 });
 
@@ -58,7 +61,6 @@ public class ItemCarritoServiceImp implements ItemCarritoService {
             throw new ReglaNegocioException("Cantidad no puede ser menor a 1 o negativo");
         }
 
-        Instant ahora=Instant.now();
         if (itemExistente.isPresent()) {
             ItemCarrito item = itemExistente.get();
             item.setCantidad(item.getCantidad() + dto.getCantidad());
@@ -77,7 +79,7 @@ public class ItemCarritoServiceImp implements ItemCarritoService {
         carrito.setActualizadoEn(ahora);
         carrito.setUltimaInteraccion(ahora);
 
-        return carritoMapper.toDto(carrito);
+        return carritoMapper.toDto(carrito,ahora);
     }
 
     @Override
@@ -110,7 +112,7 @@ public class ItemCarritoServiceImp implements ItemCarritoService {
 
         carritoRepository.save(carrito);
 
-        return carritoMapper.toDto(carrito);
+        return carritoMapper.toDto(carrito,ahora);
     }
 
     @Override
@@ -133,7 +135,7 @@ public class ItemCarritoServiceImp implements ItemCarritoService {
 
         carritoRepository.save(carrito);
 
-        return carritoMapper.toDto(carrito);
+        return carritoMapper.toDto(carrito,ahora);
     }
 
 

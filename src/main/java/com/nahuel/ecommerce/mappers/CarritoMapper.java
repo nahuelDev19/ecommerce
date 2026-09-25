@@ -18,8 +18,7 @@ public class CarritoMapper {
     private final ItemCarritoMapper itemCarritoMapper;
     private final CalculadoraCarrito calculadoraCarrito;
 
-    public CarritoDto toDto(Carrito carrito) {
-        Instant ahora= Instant.now(); // correjir cuerencia sobre el origen de la fecha capturada/hora
+    public CarritoDto toDto(Carrito carrito,Instant ahora) {
         List<ItemCarritoDto> items = itemCarritoMapper.toDto(carrito.getItems(),ahora);
         BigDecimal subtotal  = calculadoraCarrito.subtotal(items);
         BigDecimal descuento = calculadoraCarrito.descuento(carrito.getCupon(), subtotal);
@@ -39,7 +38,7 @@ public class CarritoMapper {
         return dto;
     }
 
-    public List<CarritoDto> toDto(List<Carrito> carritos) {
-        return carritos.stream().map(this::toDto).toList();
+    public List<CarritoDto> toDto(List<Carrito> carritos,Instant ahora) {
+        return carritos.stream().map(c -> toDto(c,ahora)).toList();
     }
 }

@@ -149,22 +149,23 @@ public class CuponServiceImp implements CuponeService {
 
     @Override
     public CarritoDto aplicarCupon( UUID carritoId, String codCupon,UUID idUsuario) {
+        Instant ahora = Instant.now();
+
         Carrito carrito= carritoRepository.findByIdAndUsuarioId(carritoId,idUsuario)
                 .orElseThrow(()-> new RecursoNoEncontradoException("carrito no encontrado"));
         Cupon cupon= cuponesRepository.findByCodigoCupon(codCupon.toUpperCase())
                 .orElseThrow(()-> new RecursoNoEncontradoException("el cupon no fue encontrado"));
 
-        validarAplicacionCupon(cupon,carrito);
+        validarAplicacionCupon(cupon,carrito,ahora);
 
         carrito.setCupon(cupon);
-        carrito.setUltimaInteraccion(Instant.now());
+        carrito.setUltimaInteraccion(ahora);
 
         carritoRepository.save(carrito);
-        return carritoMapper.toDto(carrito);
+        return carritoMapper.toDto(carrito,ahora);
     }
 
-    private void validarAplicacionCupon(Cupon cupon, Carrito carrito ){
-        Instant ahora = Instant.now();
+    private void validarAplicacionCupon(Cupon cupon, Carrito carrito,Instant ahora ){
         if (cupon.getEstadoCupon() != ACTIVO) {
             throw new CuponInvalidoException("El cupón no está activo");
         }
@@ -186,7 +187,7 @@ public class CuponServiceImp implements CuponeService {
         if (cupon.getMontoMinimoCarrito() != null &&
                 cupon.getMontoMinimoCarrito().compareTo(BigDecimal.ZERO) > 0) {
 
-            BigDecimal subtotal = carritoMapper.toDto(carrito).getSubtotal();
+            BigDecimal subtotal = carritoMapper.toDto(carrito,ahora).getSubtotal();
             if (subtotal.compareTo(cupon.getMontoMinimoCarrito()) < 0) {
                 throw new MontoMinimoNoAlcanzadoException("El subtotal del carrito no alcanza el monto mínimo requerido para usar este cupón.");            }
         }
@@ -195,12 +196,14 @@ public class CuponServiceImp implements CuponeService {
 
     @Override
     public CarritoDto quitarCupon(UUID carritoId, UUID idUsuario) {
+        Instant ahora = Instant.now();   // una sola lectura
+
         Carrito carrito= carritoRepository.findByIdAndUsuarioId(carritoId, idUsuario)
                 .orElseThrow(()-> new RecursoNoEncontradoException("carrito no encontrado"));
         carrito.setCupon(null);
-        carrito.setUltimaInteraccion(Instant.now());
+        carrito.setUltimaInteraccion(ahora);
         carritoRepository.save(carrito);
-        return carritoMapper.toDto(carrito);
+        return carritoMapper.toDto(carrito,ahora);
     }
 
 

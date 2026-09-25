@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,22 +41,25 @@ public class CarritoServiceImp implements CarritoService {
         carrito.setUsuario(usuario);
 
         carrito = carritoRepository.save(carrito);
-        return carritoMapper.toDto(carrito);
+        Instant ahora = Instant.now();
+
+        return carritoMapper.toDto(carrito,ahora);
     }
 
     @Override
     public List<CarritoDto> listar(UUID idUsuario) {
+        Instant ahora = Instant.now();   // una sola lectura
 
         return carritoRepository.findByUsuarioId(idUsuario)
                 .stream()
-                .map(carritoMapper::toDto)
+                .map( c ->carritoMapper.toDto(c,ahora))
                 .toList();
     }
 
     @Override
     public CarritoDto buscarPorId(UUID id,UUID idUsuario) {
         return carritoRepository.findByIdAndUsuarioId(id, idUsuario)
-                .map(carritoMapper::toDto).orElseThrow(() -> new RecursoNoEncontradoException("Carrito no encontrado"));
+                .map(c -> carritoMapper.toDto(c,Instant.now())).orElseThrow(() -> new RecursoNoEncontradoException("Carrito no encontrado"));
     }
 
     @Override
@@ -68,7 +72,7 @@ public class CarritoServiceImp implements CarritoService {
     @Override
     public CarritoDto buscarCarritoActivoDelUsuarioAutenticado(UUID idUsuario) {
         Carrito carrito= carritoRepository.findByUsuarioIdAndEstadoCarrito(idUsuario, EstadoCarrito.ACTIVO).orElseThrow(()-> new RecursoNoEncontradoException("no cuenta con un carrito activo"));
-        return  carritoMapper.toDto(carrito);
+        return  carritoMapper.toDto(carrito,Instant.now());
     }
 
 
