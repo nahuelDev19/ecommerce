@@ -1,9 +1,10 @@
 package com.nahuel.ecommerce.pipeline;
 
+import com.nahuel.ecommerce.config.LimitesImportacion;
 import com.nahuel.ecommerce.dtos.ProductoExcelDto;
 import com.nahuel.ecommerce.exceptions.*;
+import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,16 +14,30 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+@RequiredArgsConstructor
 @Service
 public class ProcesarExcelService {
 
+    private final LimitesImportacion limitesImportacion;
+
 
     public List<ProductoExcelDto> leerExcel(MultipartFile file) {
+
+        int maxLargoCelda = limitesImportacion.getMaxLargoCelda();
+
+        if(file.getSize() > limitesImportacion.getMaxTamanioBytes().toBytes()){
+            throw new ArchivoDemasiadoGrandeException();
+        }
+
         List<ProductoExcelDto> lista = new ArrayList<>();
 
         try (InputStream is = file.getInputStream();
              Workbook workbook = WorkbookFactory.create(is);) {
             Sheet sheet = workbook.getSheetAt(0);
+
+            if (sheet.getLastRowNum()+1 > limitesImportacion.getMaxFilas()){
+                throw new DemasiadasFilasException();
+            }
 
             Row headerRow= sheet.getRow(0);
 
@@ -30,10 +45,14 @@ public class ProcesarExcelService {
                 throw new EncabezadoFaltanteException();
             }
 
-            validarColumna(headerRow);
+            validarColumna(headerRow,maxLargoCelda);
 
             boolean primeraFila= true;
             for (Row row : sheet) {
+
+                if (row.getLastCellNum()+1 >limitesImportacion.getMaxColumnas()){
+                    throw new DemasiadasColumnasException();
+                }
 
                 if (primeraFila){
                     primeraFila= false;
@@ -41,14 +60,17 @@ public class ProcesarExcelService {
                 }
 
                 ProductoExcelDto dto = new ProductoExcelDto();
-                dto.setNombre(obtenerValorCelda(row.getCell(0)));
-                dto.setDescripcion(obtenerValorCelda(row.getCell(1)));
-                dto.setMoneda(obtenerValorCelda(row.getCell(2)));
-                dto.setPrecio(obtenerValorCelda(row.getCell(3)));
-                dto.setActivo(obtenerValorCelda(row.getCell(4)));
+                dto.setNombre(obtenerValorCelda(row.getCell(0),maxLargoCelda));
+                dto.setDescripcion(obtenerValorCelda(row.getCell(1),maxLargoCelda));
+                dto.setMoneda(obtenerValorCelda(row.getCell(2),maxLargoCelda));
+                dto.setPrecio(obtenerValorCelda(row.getCell(3),maxLargoCelda));
+                dto.setActivo(obtenerValorCelda(row.getCell(4),maxLargoCelda));
                 lista.add(dto);
             }
 
+        }
+        catch (AppException e){
+            throw e;
         }
         catch (IOException e) {
             throw new ErrorProcesamientoArchivoException("Error al procesar archivo Excel", e);
@@ -61,13 +83,15 @@ public class ProcesarExcelService {
     }
 
 
-    private void validarColumna(Row row){
+    private void validarColumna(Row row, int maxLargoCelda){
 
         List<String> columnaObligatoria= List.of("nombre","descripcion","moneda","precio","activo");
         List<String> columnasExistentes= new ArrayList<>();
         List<String> faltante= new ArrayList<>();
         for (Cell cel:row){
-            columnasExistentes.add(cel.getStringCellValue().trim().toLowerCase());
+            columnasExistentes.add(
+                    obtenerValorCelda(cel,maxLargoCelda).toLowerCase()
+            );
         }
 
         for (String col: columnaObligatoria){
@@ -81,46 +105,54 @@ public class ProcesarExcelService {
         }
     }
 
-    public static String obtenerValorCelda(Cell cell) {
+    public String obtenerValorCelda(Cell cell, int maxLargoCelda) {
 
         if (cell == null) {
             return "";
         }
 
+        String valor;
+
         switch (cell.getCellType()) {
 
             case STRING:
-                return cell.getStringCellValue().trim();
-
+                valor= cell.getStringCellValue().trim();
+                break;
             case NUMERIC:
                 if (DateUtil.isCellDateFormatted(cell)) {
                     LocalDate fecha = cell.getDateCellValue()
                             .toInstant()
                             .atZone(ZoneId.systemDefault())
                             .toLocalDate();
-                    return fecha.toString(); // formato ISO yyyy-MM-dd
+
+                    valor= fecha.toString(); // formato ISO yyyy-MM-dd
                 } else {
-                    double valor = cell.getNumericCellValue();
+                    double numero = cell.getNumericCellValue();
 
-                    // Evita que 1500.0 salga como "1500.0"
-                    if (valor == (long) valor) {
-                        return String.valueOf((long) valor);
+                    if (numero == (long) numero) {
+                        valor = String.valueOf((long) numero);
+                    } else {
+                        valor = String.valueOf(numero);
                     }
-
-                    return String.valueOf(valor);
                 }
+                break;
 
             case BOOLEAN:
-                return String.valueOf(cell.getBooleanCellValue());
+                valor =String.valueOf(cell.getBooleanCellValue());
+                break;
 
             case FORMULA:
                 throw new FormulaNoPermitidaException();
             case BLANK:
-                return "";
+                valor= "";
+                break;
 
             default:
-                return "";
+                valor= "";
         }
+        if (valor.length() > maxLargoCelda) {
+            throw new CeldaDemasiadoLargaException(cell.getRowIndex()+1,cell.getColumnIndex()+1,valor.length());}
+        return valor;
     }
 
 
