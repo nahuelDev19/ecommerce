@@ -36,7 +36,8 @@ importacion:
     max-filas: 50000
     max-columnas: 50
     max-largo-celda: 500
-    min-ratio-descompresion: 0.01   # anti zip bomb: hasta 100x de expansión
+    min-ratio-descompresion: 0.1   # anti zip bomb: hasta 10x de expansión
+    max-texto-descomprimido: 10000000
     tamanio-lote: 500
     directorio-temporal: ${java.io.tmpdir}/importaciones
 supabase:

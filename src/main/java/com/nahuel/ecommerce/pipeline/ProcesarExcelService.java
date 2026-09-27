@@ -23,6 +23,7 @@ public class ProcesarExcelService {
 
     public List<ProductoExcelDto> leerExcel(MultipartFile file) {
 
+
         int maxLargoCelda = limitesImportacion.getMaxLargoCelda();
 
         if(file.getSize() > limitesImportacion.getMaxTamanioBytes().toBytes()){
@@ -35,7 +36,7 @@ public class ProcesarExcelService {
              Workbook workbook = WorkbookFactory.create(is);) {
             Sheet sheet = workbook.getSheetAt(0);
 
-            if (sheet.getLastRowNum()+1 > limitesImportacion.getMaxFilas()){
+            if (sheet.getLastRowNum() >= limitesImportacion.getMaxFilas()){
                 throw new DemasiadasFilasException();
             }
 
@@ -50,7 +51,7 @@ public class ProcesarExcelService {
             boolean primeraFila= true;
             for (Row row : sheet) {
 
-                if (row.getLastCellNum()+1 >limitesImportacion.getMaxColumnas()){
+                if (row.getLastCellNum() >limitesImportacion.getMaxColumnas()){
                     throw new DemasiadasColumnasException();
                 }
 
@@ -72,9 +73,18 @@ public class ProcesarExcelService {
         catch (AppException e){
             throw e;
         }
+
         catch (IOException e) {
-            throw new ErrorProcesamientoArchivoException("Error al procesar archivo Excel", e);
+            if (esZipBomb(e)) {
+                throw new ArchivoComprimidoPeligrosoException(e);
+            }
+
+            throw new ErrorProcesamientoArchivoException(
+                    "Error al procesar archivo Excel",
+                    e
+            );
         }
+
         catch (Exception e){
             throw new ErrorProcesamientoArchivoException("El archivo no tiene un formato Excel válido o está dañado", e);
         }
@@ -156,5 +166,19 @@ public class ProcesarExcelService {
     }
 
 
+    private boolean esZipBomb(Throwable exception) {
+        Throwable actual = exception;
+
+        while (actual != null) {
+            if (actual.getMessage() != null &&
+                    actual.getMessage().contains("Zip bomb detected")) {
+                return true;
+            }
+
+            actual = actual.getCause();
+        }
+
+        return false;
+    }
 
 }
