@@ -70,6 +70,21 @@ public class ProcesarExcelService {
             }
 
         }
+        // Orden de catch: AppException PRIMERO (antes de IOException y de Exception).
+        // Es el orden correcto y hay que mantenerlo: si este catch se moviera debajo de
+        // catch (Exception), todos los errores de negocio quedarian enmascarados.
+        //
+        // Caso concreto: planilla valida (Excel legible) a la que le falta la columna "precio".
+        // validarColumna() se ejecuta dentro del try y lanza ColumnasFaltantesException,
+        // que es ReglaNegocioException -> AppException (BAD_REQUEST / BUSINESS_RULE).
+        // Este primer catch la reenvia intacta, asi que GlobalExceptionHandler la mapea a un
+        // ProblemDetail 400 con:
+        //   status = 400
+        //   title  = "BUSINESS_RULE"
+        //   detail = "Faltan columnas obligatorias en el archivo: [precio]"
+        // O sea: el usuario SI recibe el mensaje especifico de columnas faltantes, y NO el
+        // generico "El archivo no tiene un formato Excel valido o esta danado" (ese es el
+        // ultimo catch, reservado para Exception que no sea AppException).
         catch (AppException e){
             throw e;
         }
