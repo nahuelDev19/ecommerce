@@ -43,7 +43,8 @@ public class TransformacionDatosService {
                         resultado.getLineasDescartadasPorFormatoInvalido() + 1);
                 resultado.getErrores().add(  new ErrorImportacionDto(
                         dto.getNombre(),
-                        e.getMessage()
+                        e.getMessage(),
+                        dto.getNumeroFila()
                 ) );
             }
         }
