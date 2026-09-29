@@ -6,6 +6,7 @@ import com.nahuel.ecommerce.dtos.ResultadoImportacionDto;
 import com.nahuel.ecommerce.exceptions.ArchivoVacioException;
 import com.nahuel.ecommerce.exceptions.FormatoInvalidoException;
 import com.nahuel.ecommerce.pipeline.ProcesarArchivosService;
+import com.nahuel.ecommerce.pipeline.ValidacionImportacion;
 import com.nahuel.ecommerce.services.ProductoServiceImp;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -77,8 +78,12 @@ public class ProductoController {
             throw new FormatoInvalidoException(nombre);
         }
 
+        ValidacionImportacion validacionImportacion= procesarArchivosService.validarArchivo(archivo);
+        if(validacionImportacion.tieneErrores()){
+            return ResponseEntity.unprocessableContent().body(validacionImportacion.reporte());
+        }
 
-        ResultadoImportacionDto resultado=  procesarArchivosService.procesarArchivo(archivo);
+        ResultadoImportacionDto resultado=  procesarArchivosService.confirmar(validacionImportacion);
         return ResponseEntity.status(HttpStatus.CREATED).body(resultado);
 
     }
