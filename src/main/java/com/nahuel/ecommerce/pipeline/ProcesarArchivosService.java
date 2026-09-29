@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import static java.util.stream.Collectors.toSet;
 
@@ -47,9 +48,9 @@ public class ProcesarArchivosService {
         List<ProductoExcelDto> listProductosNormalizados= normalizacionDatosService.normalizar(listProductosFiltrados);
         List<Producto> productosTransformados= transformacionDatosService.transformar(listProductosNormalizados,reporte);
 
-        Set<String> nombres = productosTransformados.stream().map(Producto::getNombre).collect(toSet());
+Set<String> nombres = productosTransformados.stream().map(Producto::getNombre).collect(toSet());
         Set<String> existentes = nombres.isEmpty() ? Set.of() : new HashSet<>(productoRepository.findNombresExistentes(nombres));
-        Set<String> vistos = new HashSet<>();
+        Set<String> vistos = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         List<Producto> validos = productosTransformados.stream()
                 .filter(p -> !existentes.contains(p.getNombre()))
                 .filter(p -> vistos.add(p.getNombre()))
