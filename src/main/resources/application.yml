@@ -21,11 +21,13 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    jdbc:
-      batch_size: 500
     show-sql: false
-    order_insert: true
-    order_update: true
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 500
+        order_inserts: true
+        order_updates: true
 
 jwt:
   secret: ${JWT_SECRET}
@@ -45,3 +47,13 @@ supabase:
 
 server:
   port: ${PORT:8080}
+
+logging:
+  level:
+    # Verificacion del guardado por lotes.
+    # Hibernate 7.4.1 (Spring Boot 4.1.0): la categoria real del logger es
+    # org.hibernate.orm.jdbc.batch. NO son validas org.hibernate.engine.jdbc.batch
+    # (es el paquete, no el logger) ni ...batch.internal.BatchingBatch (no existe en 7.x).
+    # TRACE emite "Executing JDBC batch (500 / 500)" una vez por lote -> 40 lineas para 20.000.
+    # Ojo: tambien emite "Adding to JDBC batch" por cada fila (~20.000 lineas): filtrar por "Executing".
+    org.hibernate.orm.jdbc.batch: TRACE
