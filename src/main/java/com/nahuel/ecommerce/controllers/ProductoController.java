@@ -1,10 +1,12 @@
 package com.nahuel.ecommerce.controllers;
 
+import com.nahuel.ecommerce.config.LimitesImportacion;
 import com.nahuel.ecommerce.dtos.FiltrosBusquedaProductoDto;
 import com.nahuel.ecommerce.dtos.ProductoDto;
 import com.nahuel.ecommerce.dtos.ResultadoImportacionDto;
 import com.nahuel.ecommerce.exceptions.ArchivoVacioException;
 import com.nahuel.ecommerce.exceptions.FormatoInvalidoException;
+import com.nahuel.ecommerce.pipeline.ImportacionAsyncService;
 import com.nahuel.ecommerce.pipeline.ProcesarArchivosService;
 import com.nahuel.ecommerce.pipeline.ValidacionImportacion;
 import com.nahuel.ecommerce.services.ProductoServiceImp;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,6 +30,8 @@ public class ProductoController {
 
     private final ProductoServiceImp productoService;
     private final ProcesarArchivosService procesarArchivosService;
+    private final ImportacionAsyncService importacionAsyncService;
+    private final LimitesImportacion limitesImportacion;
 
     @PostMapping
     public ResponseEntity<?> crearProducto(@Valid @RequestBody ProductoDto dto){
@@ -69,7 +74,7 @@ public class ProductoController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<?> upload(@RequestParam MultipartFile archivo){
+    public ResponseEntity<?> upload(@RequestParam MultipartFile archivo) throws IOException {
         if(archivo==null || archivo.isEmpty()){
             throw new ArchivoVacioException();
         }
@@ -83,8 +88,11 @@ public class ProductoController {
             return ResponseEntity.unprocessableContent().body(validacionImportacion.reporte());
         }
 
-        ResultadoImportacionDto resultado=  procesarArchivosService.confirmar(validacionImportacion);
-        return ResponseEntity.status(HttpStatus.CREATED).body(resultado);
+        String nombreArchivo= archivo.getOriginalFilename();
+        Path destino= Path.of(limitesImportacion.getDirectorioTemporal());
+        archivo.transferTo(destino);
+        importacionAsyncService.importarEnSegundoPlano(destino);
+        return ResponseEntity.accepted().build();
 
     }
 }
