@@ -84,7 +84,7 @@ Set<String> nombres = productosTransformados.stream().map(Producto::getNombre).c
 
             guardarLote(chunk);
             guardados+= chunk.size();
-            log.info("importacion: {} espacio de {} productos guardados");
+            log.info("importacion: {} espacio de {} productos guardados",guardados,aGuardar.size());
 
 
         }
