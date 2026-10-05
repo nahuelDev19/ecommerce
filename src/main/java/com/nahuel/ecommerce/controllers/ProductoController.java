@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
@@ -83,13 +84,10 @@ public class ProductoController {
             throw new FormatoInvalidoException(nombre);
         }
 
-        ValidacionImportacion validacionImportacion= procesarArchivosService.validarArchivo(archivo);
-        if(validacionImportacion.tieneErrores()){
-            return ResponseEntity.unprocessableContent().body(validacionImportacion.reporte());
-        }
-
-        String nombreArchivo= archivo.getOriginalFilename();
-        Path destino= Path.of(limitesImportacion.getDirectorioTemporal());
+        Path carpeta= Path.of(limitesImportacion.getDirectorioTemporal());
+        Files.createDirectories(carpeta);
+        UUID idImportacion= UUID.randomUUID();
+        Path destino= carpeta.resolve(idImportacion+".xlsx");
         archivo.transferTo(destino);
         importacionAsyncService.importarEnSegundoPlano(destino);
         return ResponseEntity.accepted().build();

@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.*;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -21,18 +22,23 @@ public class ProcesarExcelService {
     private final LimitesImportacion limitesImportacion;
 
 
-    public List<ProductoExcelDto> leerExcel(MultipartFile file) {
+    public List<ProductoExcelDto> leerExcel(Path file) {
 
 
         int maxLargoCelda = limitesImportacion.getMaxLargoCelda();
 
-        if(file.getSize() > limitesImportacion.getMaxTamanioBytes().toBytes()){
-            throw new ArchivoDemasiadoGrandeException();
+        // Files.size lanza IOException (checked), por eso va en su propio try
+        try {
+            if (Files.size(file) > limitesImportacion.getMaxTamanioBytes().toBytes()) {
+                throw new ArchivoDemasiadoGrandeException();
+            }
+        } catch (IOException e) {
+            throw new ErrorProcesamientoArchivoException("Error al leer el archivo", e);
         }
 
         List<ProductoExcelDto> lista = new ArrayList<>();
 
-        try (InputStream is = file.getInputStream();
+        try (InputStream is = Files.newInputStream(file);
              Workbook workbook = WorkbookFactory.create(is);) {
             Sheet sheet = workbook.getSheetAt(0);
 

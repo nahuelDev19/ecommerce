@@ -8,6 +8,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.time.Instant;
 import java.util.List;
@@ -47,4 +48,10 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.UNAUTHORIZED) // Devuelve HTTP 401
                 .body(Map.of("error", ex.getMessage())); // Devuelve JSON: {"error": "username o password incorrectos"}
     }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ProblemDetail> manejarArchivoGrande(MaxUploadSizeExceededException e){
+        return null;
+    }
+
 }
