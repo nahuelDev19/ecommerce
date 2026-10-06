@@ -32,6 +32,17 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    // Archivo duplicado: devuelve el id de la importación anterior
+    @ExceptionHandler(ArchivoDuplicadoException.class)
+    public ProblemDetail handleArchivoDuplicado(ArchivoDuplicadoException ex, HttpServletRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(ex.getStatus(), ex.getMessage());
+        problem.setTitle(ex.getCode());
+        problem.setProperty("importacionId", ex.getImportacionAnterior());
+        problem.setProperty("timestamp", Instant.now());
+        problem.setProperty("path", request.getRequestURI());
+        return problem;
+    }
+
     // Errores de validación (@Valid en DTOs)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {

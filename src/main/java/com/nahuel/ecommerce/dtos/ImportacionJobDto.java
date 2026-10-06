@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 public class ImportacionJobDto {
 
 
+    private UUID id;
     private String rutaArchivoTemporal;
     private EstadoImportacion estado;
     private int cantidadFilas;
