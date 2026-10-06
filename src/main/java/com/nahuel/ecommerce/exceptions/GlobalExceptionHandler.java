@@ -1,10 +1,12 @@
 package com.nahuel.ecommerce.exceptions;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -16,6 +18,9 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @Value("${spring.servlet.multipart.max-file-size}")
+    private DataSize maxFileSize;
 
     // Captura TODAS tus excepciones de negocio de una sola vez
     @ExceptionHandler(AppException.class)
@@ -51,7 +56,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ProblemDetail> manejarArchivoGrande(MaxUploadSizeExceededException e){
-        return null;
+
+        long limite = e.getMaxUploadSize()>0? e.getMaxUploadSize() : maxFileSize.toMegabytes();
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONTENT_TOO_LARGE,"El archivo supera el tamaño máximo permitido de " + limite + " MB");
+        problemDetail.setTitle("Archivo demasiado grande");
+        problemDetail.setProperty("timeStamp", Instant.now());
+        problemDetail.setProperty("maxUploadSize",limite + " MB");
+
+        return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(problemDetail) ;
     }
 
 }
