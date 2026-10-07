@@ -3,6 +3,7 @@ package com.nahuel.ecommerce.controllers;
 import com.nahuel.ecommerce.dtos.FiltrosBusquedaProductoDto;
 import com.nahuel.ecommerce.dtos.ProductoDto;
 import com.nahuel.ecommerce.services.ImportacionService;
+import com.nahuel.ecommerce.services.ProductoService;
 import com.nahuel.ecommerce.services.ProductoServiceImp;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,7 @@ import java.util.UUID;
 @RequestMapping("/api/productos")
 public class ProductoController {
 
-    private final ProductoServiceImp productoService;
+    private final ProductoService productoService;
     private final ImportacionService importacionService;
 
     @PostMapping
