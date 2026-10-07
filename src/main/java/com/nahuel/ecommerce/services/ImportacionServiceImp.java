@@ -99,4 +99,17 @@ public class ImportacionServiceImp implements ImportacionService {
             throw new ErrorProcesamientoArchivoException("No se pudo eliminar el archivo temporal", e);
         }
     }
+
+    /*
+    La huella se calcula sobre el contenido porque lo que queremos detectar es si dos archivos son el mismo archivo, más allá de cómo se llamen.
+    El nombre es un dato arbitrario que el usuario puede cambiar libremente y no dice nada sobre los bytes del archivo.
+
+    Situación 1 (falso negativo con el nombre): subo ventas_enero.xlsx y luego copia_ventas_enero.xlsx.
+    Ambos tienen exactamente el mismo contenido. Si hasheara por nombre, el sistema los vería distintos y permitiría subir el mismo archivo dos veces.
+    Con hash por contenido, el segundo se detecta como duplicado.
+
+    Situación 2 (falso positivo con el nombre): subo productos.xlsx con 100 filas hoy, y mañana subo otro productos.xlsx con 150 filas (datos nuevos).
+    Mismo nombre, contenido distinto. Si hasheara por nombre, el sistema rechazaría el segundo como "duplicado" y perdería la carga nueva.
+    Con hash por contenido, detecta que son distintos y lo acepta.
+     */
 }
