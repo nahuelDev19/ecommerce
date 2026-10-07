@@ -13,6 +13,8 @@ import com.nahuel.ecommerce.security.UsuarioAutenticadoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -51,8 +53,8 @@ public class ImportacionServiceImp implements ImportacionService {
         // Copia a disco y calcula la huella en una sola pasada.
         String huella = copiarYCalcularHuella(archivo, destino);
 
-        Optional<ImportacionJob> existente = importacionJobRepository.findByhuellaContenido(huella);
-        if (existente.isPresent()) {
+        Optional<ImportacionJob> existente = importacionJobRepository.findFirstByHuellaContenidoOrderByFechaCreacionDesc(huella);
+        if (existente.isPresent() && existente.get().getEstado()!= EstadoImportacion.FALLIDOS) {
             borrarArchivo(destino);
             throw new ArchivoDuplicadoException(existente.get().getId());
         }
@@ -66,7 +68,14 @@ public class ImportacionServiceImp implements ImportacionService {
 
         ImportacionJob guardado = importacionJobRepository.save(job);
 
-        importacionAsyncService.importarEnSegundoPlano(destino);
+        // El disparo va después del commit: si corriera acá, el hilo del pool podría
+        // buscar el job antes de que la fila exista y no lo encontraría.
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                importacionAsyncService.importarEnSegundoPlano(destino, guardado.getId());
+            }
+        });
         return guardado.getId();
     }
 
