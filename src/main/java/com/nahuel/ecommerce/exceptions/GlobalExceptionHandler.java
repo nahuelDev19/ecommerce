@@ -1,6 +1,8 @@
 package com.nahuel.ecommerce.exceptions;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.log4j.Log4j;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -16,6 +18,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -76,6 +79,14 @@ public class GlobalExceptionHandler {
         problemDetail.setProperty("maxUploadSize",limite + " MB");
 
         return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(problemDetail) ;
+    }
+
+
+    @ExceptionHandler(OutOfMemoryError.class)
+    public void handleOutOfMemoryError(OutOfMemoryError ex){
+        log.error("OutOfMemoryError capturado: {}", ex.getMessage(), ex);
+
+
     }
 
 }
