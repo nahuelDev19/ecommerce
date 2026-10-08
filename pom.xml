@@ -145,6 +145,14 @@
 			<artifactId>testcontainers-postgresql</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- Testcontainers 2.0.5 usa org.apache.commons.lang3.exception.ExceptionUtils en
+		     TestcontainersConfiguration pero su pom NO declara commons-lang3 (solo
+		     commons-compress): sin esto explota con NoClassDefFoundError al arrancar. -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
