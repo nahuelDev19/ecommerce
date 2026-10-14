@@ -71,12 +71,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ProblemDetail> manejarArchivoGrande(MaxUploadSizeExceededException e){
 
-        long limite = e.getMaxUploadSize()>0? e.getMaxUploadSize() : maxFileSize.toMegabytes();
+        long limiteEnByte = e.getMaxUploadSize()>0? e.getMaxUploadSize() : maxFileSize.toBytes();
+        long limiteMB  = DataSize.ofBytes(limiteEnByte).toMegabytes();
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
-                HttpStatus.CONTENT_TOO_LARGE,"El archivo supera el tamaño máximo permitido de " + limite + " MB");
+                HttpStatus.CONTENT_TOO_LARGE,"El archivo supera el tamaño máximo permitido de " + limiteMB + " MB");
         problemDetail.setTitle("Archivo demasiado grande");
         problemDetail.setProperty("timestamp", Instant.now());
-        problemDetail.setProperty("maxUploadSize",limite + " MB");
+        problemDetail.setProperty("maxUploadSize",limiteMB + " MB");
 
         return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(problemDetail) ;
     }
