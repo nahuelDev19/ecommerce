@@ -1,5 +1,6 @@
 package com.nahuel.ecommerce.pipeline;
 
+import com.nahuel.ecommerce.dtos.ErrorImportacionDto;
 import com.nahuel.ecommerce.dtos.ResultadoImportacionDto;
 import com.nahuel.ecommerce.entitys.EstadoImportacion;
 import com.nahuel.ecommerce.entitys.ImportacionJob;
@@ -12,7 +13,9 @@ import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,8 +38,13 @@ public class ImportacionAsyncService {
         job.setCantidadFilas(r.getLineasProcesadas());
 
         }catch (ArchivoConErroresException e){
-            //termina pero con errores
+            // El reporte viaja adentro de la excepción: si no lo leo acá, se pierde.
+            ResultadoImportacionDto reporte = e.getReporte();
+
             job.setEstado(EstadoImportacion.COMPLETA_CON_ERRORES);
+            job.setCantidadFilas(reporte.getLineasProcesadas());
+            job.setFilasConError(cantidadDeFilasConError(reporte));
+            job.setDetalleErrores(serializarErrores(reporte.getErrores()));
         }catch (Exception e){
             //aqui se rompe
             job.setEstado(EstadoImportacion.FALLIDOS);
@@ -47,5 +55,27 @@ public class ImportacionAsyncService {
         importacionJobRepository.save(job);
         }
 
+    }
+
+    // Cada entrada de la lista de errores ES una fila descartada (TransformacionDatosService
+    // agrega una por fila), así que la cantidad de filas con error es el tamaño de la lista.
+    private int cantidadDeFilasConError(ResultadoImportacionDto reporte) {
+        if (reporte.getErrores() == null) {
+            return 0;
+        }
+        return reporte.getErrores().size();
+    }
+
+    // El campo del job es String (detalle_errores es TEXT en la base), así que acá se
+    // arma el texto: una línea por fila con error.
+    private String serializarErrores(List<ErrorImportacionDto> errores) {
+        if (errores == null || errores.isEmpty()) {
+            return null;
+        }
+        return errores.stream()
+                .map(error -> "Fila " + error.getNumeroFila()
+                        + (error.getNombre() == null ? "" : " (" + error.getNombre() + ")")
+                        + ": " + error.getError())
+                .collect(Collectors.joining("\n"));
     }
 }

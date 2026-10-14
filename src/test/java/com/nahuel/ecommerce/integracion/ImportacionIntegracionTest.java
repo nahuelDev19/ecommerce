@@ -120,6 +120,14 @@ class ImportacionIntegracionTest extends TestDeIntegracion {
         assertThat(job.getFechaFinalizacion()).isNotNull();
         assertThat(job.getProductosImportados()).isZero();
 
+        // ---- El detalle de la excepción quedó guardado en el job ----
+        assertThat(job.getCantidadFilas()).isEqualTo(5);
+        assertThat(job.getFilasConError()).isEqualTo(2);
+        assertThat(job.getDetalleErrores())
+                .contains("Auriculares")
+                .contains("Parlantes")
+                .contains("Fila 5");
+
         // Lo importante del caso: ni siquiera las 3 filas BUENAS se guardaron.
         assertThat(productoRepository.existsByNombre("Teclado")).isFalse();
         assertThat(productoRepository.existsByNombre("Mouse")).isFalse();

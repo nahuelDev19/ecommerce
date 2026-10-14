@@ -67,6 +67,9 @@ public class ProcesarExcelService {
                 }
 
                 ProductoExcelDto dto = new ProductoExcelDto();
+                // Número de fila tal como se ve en Excel (getRowNum es 0-based).
+                // Sin esto los errores se reportaban siempre como "Fila 0".
+                dto.setNumeroFila(row.getRowNum() + 1);
                 dto.setNombre(obtenerValorCelda(row.getCell(0),maxLargoCelda));
                 dto.setDescripcion(obtenerValorCelda(row.getCell(1),maxLargoCelda));
                 dto.setMoneda(obtenerValorCelda(row.getCell(2),maxLargoCelda));
