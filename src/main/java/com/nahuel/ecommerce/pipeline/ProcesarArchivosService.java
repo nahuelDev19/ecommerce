@@ -5,18 +5,14 @@ import com.nahuel.ecommerce.dtos.ProductoExcelDto;
 import com.nahuel.ecommerce.dtos.ResultadoImportacionDto;
 import com.nahuel.ecommerce.entitys.Producto;
 import com.nahuel.ecommerce.exceptions.ArchivoConErroresException;
-import com.nahuel.ecommerce.exceptions.ReglaNegocioException;
 import com.nahuel.ecommerce.repositories.ProductoRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
@@ -36,10 +32,9 @@ public class ProcesarArchivosService {
     private final NormalizacionDatosService normalizacionDatosService;
     private final TransformacionDatosService transformacionDatosService;
     private final LimitesImportacion limitesImportacion;
-    @PersistenceContext
-    private EntityManager entityManager;
+    private final GuardadoPorLotesService guardadoPorLotesService;
 
-    @Transactional
+
     public ResultadoImportacionDto procesarArchivo(Path file){
 
 
@@ -82,7 +77,7 @@ Set<String> nombres = productosTransformados.stream().map(Producto::getNombre).c
         for(int i=0; i< aGuardar.size() ;i+= lote){
             List<Producto> chunk= aGuardar.subList(i,Math.min(i+lote,aGuardar.size()));
 
-            guardarLote(chunk);
+            guardadoPorLotesService.guardarLote(chunk);
             guardados+= chunk.size();
             log.info("importacion: {} espacio de {} productos guardados",guardados,aGuardar.size());
 
@@ -93,12 +88,6 @@ Set<String> nombres = productosTransformados.stream().map(Producto::getNombre).c
         return v.reporte();
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void guardarLote(List<Producto> chunk){
-        productoRepository.saveAll(chunk);
-        entityManager.flush();
-        entityManager.clear();
-    }
 
 
 }
