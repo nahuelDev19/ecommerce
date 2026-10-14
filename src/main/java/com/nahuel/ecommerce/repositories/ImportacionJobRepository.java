@@ -8,5 +8,5 @@ import java.util.UUID;
 
 public interface ImportacionJobRepository extends JpaRepository<ImportacionJob, UUID> {
 
-    Optional<ImportacionJob> findFirstByHuellaContenidoOrderByFechaCreacionDesc(String huella);
+    Optional<ImportacionJob> findFirstByHuellaContenidoAndValidacionFalseOrderByFechaCreacionDesc(String huella);
 }

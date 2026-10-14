@@ -63,8 +63,8 @@ public class ProductoController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<UUID> upload(@RequestParam MultipartFile archivo) {
-        UUID id = importacionService.subirArchivo(archivo);
-        return ResponseEntity.accepted().body(id);
+    public ResponseEntity<UUID> upload(@RequestParam MultipartFile archivo,@RequestParam(defaultValue = "false") boolean soloValidacion) {
+        UUID id = importacionService.subirArchivo(archivo, soloValidacion);
+        return ResponseEntity.accepted().header("Location","/api/productos/importaciones/"+id).body(id);
     }
 }

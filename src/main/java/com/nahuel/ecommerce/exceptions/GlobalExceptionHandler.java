@@ -75,7 +75,7 @@ public class GlobalExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
                 HttpStatus.CONTENT_TOO_LARGE,"El archivo supera el tamaño máximo permitido de " + limite + " MB");
         problemDetail.setTitle("Archivo demasiado grande");
-        problemDetail.setProperty("timeStamp", Instant.now());
+        problemDetail.setProperty("timestamp", Instant.now());
         problemDetail.setProperty("maxUploadSize",limite + " MB");
 
         return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(problemDetail) ;
@@ -83,10 +83,15 @@ public class GlobalExceptionHandler {
 
 
     @ExceptionHandler(OutOfMemoryError.class)
-    public void handleOutOfMemoryError(OutOfMemoryError ex){
+    public ResponseEntity<ProblemDetail> handleOutOfMemoryError(OutOfMemoryError ex){
         log.error("OutOfMemoryError capturado: {}", ex.getMessage(), ex);
-
-
+        ProblemDetail problemDetail= ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONTENT_TOO_LARGE,
+                "El archivo es demasiado grande para procesar"
+        );
+        problemDetail.setTitle("SIN_MEMORIA");
+        problemDetail.setProperty("timestamp",Instant.now());
+        return  ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(problemDetail);
     }
 
 }

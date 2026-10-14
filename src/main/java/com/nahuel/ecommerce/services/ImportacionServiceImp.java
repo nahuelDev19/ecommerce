@@ -1,12 +1,10 @@
 package com.nahuel.ecommerce.services;
 
 import com.nahuel.ecommerce.config.LimitesImportacion;
+import com.nahuel.ecommerce.dtos.ImportacionJobDto;
 import com.nahuel.ecommerce.entitys.EstadoImportacion;
 import com.nahuel.ecommerce.entitys.ImportacionJob;
-import com.nahuel.ecommerce.exceptions.ArchivoDuplicadoException;
-import com.nahuel.ecommerce.exceptions.ArchivoVacioException;
-import com.nahuel.ecommerce.exceptions.ErrorProcesamientoArchivoException;
-import com.nahuel.ecommerce.exceptions.FormatoInvalidoException;
+import com.nahuel.ecommerce.exceptions.*;
 import com.nahuel.ecommerce.pipeline.ImportacionAsyncService;
 import com.nahuel.ecommerce.repositories.ImportacionJobRepository;
 import com.nahuel.ecommerce.security.UsuarioAutenticadoService;
@@ -39,7 +37,7 @@ public class ImportacionServiceImp implements ImportacionService {
     private final LimitesImportacion limitesImportacion;
 
     @Override
-    public UUID subirArchivo(MultipartFile archivo) {
+    public UUID subirArchivo(MultipartFile archivo,boolean soloValidacion) {
         if (archivo == null || archivo.isEmpty()) {
             throw new ArchivoVacioException();
         }
@@ -53,10 +51,13 @@ public class ImportacionServiceImp implements ImportacionService {
         // Copia a disco y calcula la huella en una sola pasada.
         String huella = copiarYCalcularHuella(archivo, destino);
 
-        Optional<ImportacionJob> existente = importacionJobRepository.findFirstByHuellaContenidoOrderByFechaCreacionDesc(huella);
-        if (existente.isPresent() && existente.get().getEstado()!= EstadoImportacion.FALLIDOS) {
-            borrarArchivo(destino);
-            throw new ArchivoDuplicadoException(existente.get().getId());
+        if(!soloValidacion){
+            Optional<ImportacionJob> existente = importacionJobRepository.findFirstByHuellaContenidoAndValidacionFalseOrderByFechaCreacionDesc(huella);
+            if (existente.isPresent() && existente.get().getEstado()!= EstadoImportacion.FALLIDOS) {
+                borrarArchivo(destino);
+                throw new ArchivoDuplicadoException(existente.get().getId());
+            }
+
         }
 
         ImportacionJob job = new ImportacionJob();
@@ -65,7 +66,7 @@ public class ImportacionServiceImp implements ImportacionService {
         job.setRutaArchivoTemporal(destino.toString());
         job.setHuellaContenido(huella);
         job.setEstado(EstadoImportacion.PENDIENTE);
-
+        job.setSoloValidacion(soloValidacion);
         ImportacionJob guardado = importacionJobRepository.save(job);
 
         // El disparo va después del commit: si corriera acá, el hilo del pool podría
@@ -87,6 +88,30 @@ public class ImportacionServiceImp implements ImportacionService {
         } catch (IOException e) {
             throw new ErrorProcesamientoArchivoException("No se pudo crear el archivo temporal", e);
         }
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public ImportacionJobDto consulta(UUID id){
+        ImportacionJob job = importacionJobRepository.findById(id).orElseThrow(()-> new RecursoNoEncontradoException("Importacion no encontrado"));
+        UUID idUsuarioActual= usuarioAutenticadoService.actual().getId();
+        if(job.getUsuario().getId().equals(idUsuarioActual)){
+            throw new RecursoNoEncontradoException("Importacion no encontrado");
+        }
+
+        return ImportacionJobDto.builder()
+                .id(job.getId())
+                .nombreArchivo(job.getNombreArchivo())
+                .estado(job.getEstado())
+                .soloValidacion(job.isSoloValidacion())
+                .cantidadFilas(job.getCantidadFilas())
+                .productosImportados(job.getProductosImportados())
+                .filasConError(job.getFilasConError())
+                .detalleErrores(job.getDetalleErrores())
+                .mensajeError(job.getMensajeError())
+                .fechaCreacion(job.getFechaCreacion())
+                .fechaFinalizacion(job.getFechaFinalizacion())
+                .build();
     }
 
     private String copiarYCalcularHuella(MultipartFile archivo, Path destino) {

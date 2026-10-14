@@ -19,7 +19,7 @@ public class ImportacionJobDto {
 
 
     private UUID id;
-    private String rutaArchivoTemporal;
+    private String nombreArchivo;
     private EstadoImportacion estado;
     private int cantidadFilas;
     private int productosImportados;
@@ -28,4 +28,5 @@ public class ImportacionJobDto {
     private String mensajeError;
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaFinalizacion;
+    private boolean soloValidacion;
 }
