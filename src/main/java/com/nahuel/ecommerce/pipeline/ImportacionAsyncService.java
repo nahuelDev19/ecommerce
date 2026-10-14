@@ -8,15 +8,19 @@ import com.nahuel.ecommerce.exceptions.ArchivoConErroresException;
 import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
 import com.nahuel.ecommerce.repositories.ImportacionJobRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ImportacionAsyncService {
@@ -53,8 +57,19 @@ public class ImportacionAsyncService {
             finally {
         job.setFechaFinalizacion(LocalDateTime.now());
         importacionJobRepository.save(job);
+
+        borrarArchivoTemporal(file);
         }
 
+    }
+
+    private void borrarArchivoTemporal(Path archivo) {
+        try {
+            Files.deleteIfExists(archivo);
+        } catch (IOException e) {
+
+            log.warn("No se pudo borrar el archivo temporal {}", archivo, e);
+        }
     }
 
     // Cada entrada de la lista de errores ES una fila descartada (TransformacionDatosService
