@@ -4,12 +4,11 @@ import com.nahuel.ecommerce.dtos.ErrorImportacionDto;
 import com.nahuel.ecommerce.dtos.ProductoExcelDto;
 import com.nahuel.ecommerce.dtos.ResultadoImportacionDto;
 import com.nahuel.ecommerce.entitys.Producto;
+import com.nahuel.ecommerce.exceptions.LineaConFormatoInvalidoException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,12 +37,13 @@ public class TransformacionDatosService {
 
                 lista.add(producto);
 
-            } catch (RuntimeException e) {
+            } catch (LineaConFormatoInvalidoException e) {
                 resultado.setLineasDescartadasPorFormatoInvalido(
                         resultado.getLineasDescartadasPorFormatoInvalido() + 1);
                 resultado.getErrores().add(  new ErrorImportacionDto(
                         dto.getNombre(),
-                        e.getMessage()
+                        e.getMessage(),
+                        e.getNumeroFila()
                 ) );
             }
         }
@@ -85,7 +85,7 @@ public class TransformacionDatosService {
         }
 
         if (!errores.isEmpty()) {
-            throw new RuntimeException(String.join(", ", errores));
+            throw new LineaConFormatoInvalidoException(dto.getNumeroFila(), errores);
         }
     }
 

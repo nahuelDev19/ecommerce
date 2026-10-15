@@ -1,28 +1,50 @@
 package com.nahuel.ecommerce.pipeline;
 
+import com.nahuel.ecommerce.config.LimitesImportacion;
 import com.nahuel.ecommerce.dtos.ProductoExcelDto;
 import com.nahuel.ecommerce.exceptions.*;
+import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.*;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+@RequiredArgsConstructor
 @Service
 public class ProcesarExcelService {
 
+    private final LimitesImportacion limitesImportacion;
 
-    public List<ProductoExcelDto> leerExcel(MultipartFile file) {
+
+    public List<ProductoExcelDto> leerExcel(Path file) {
+
+
+        int maxLargoCelda = limitesImportacion.getMaxLargoCelda();
+
+        // Files.size lanza IOException (checked), por eso va en su propio try
+        try {
+            if (Files.size(file) > limitesImportacion.getMaxTamanioBytes().toBytes()) {
+                throw new ArchivoDemasiadoGrandeException();
+            }
+        } catch (IOException e) {
+            throw new ErrorProcesamientoArchivoException("Error al leer el archivo", e);
+        }
+
         List<ProductoExcelDto> lista = new ArrayList<>();
 
-        try (InputStream is = file.getInputStream();
-             Workbook workbook = new XSSFWorkbook(is);) {
+        try (InputStream is = Files.newInputStream(file);
+             Workbook workbook = WorkbookFactory.create(is);) {
             Sheet sheet = workbook.getSheetAt(0);
+
+            if (sheet.getLastRowNum() >= limitesImportacion.getMaxFilas()){
+                throw new DemasiadasFilasException();
+            }
 
             Row headerRow= sheet.getRow(0);
 
@@ -30,10 +52,14 @@ public class ProcesarExcelService {
                 throw new EncabezadoFaltanteException();
             }
 
-            validarColumna(headerRow);
+            validarColumna(headerRow,maxLargoCelda);
 
             boolean primeraFila= true;
             for (Row row : sheet) {
+
+                if (row.getLastCellNum() >limitesImportacion.getMaxColumnas()){
+                    throw new DemasiadasColumnasException();
+                }
 
                 if (primeraFila){
                     primeraFila= false;
@@ -41,18 +67,48 @@ public class ProcesarExcelService {
                 }
 
                 ProductoExcelDto dto = new ProductoExcelDto();
-                dto.setNombre(obtenerValorCelda(row.getCell(0)));
-                dto.setDescripcion(obtenerValorCelda(row.getCell(1)));
-                dto.setMoneda(obtenerValorCelda(row.getCell(2)));
-                dto.setPrecio(obtenerValorCelda(row.getCell(3)));
-                dto.setActivo(obtenerValorCelda(row.getCell(4)));
+                // Número de fila tal como se ve en Excel (getRowNum es 0-based).
+                // Sin esto los errores se reportaban siempre como "Fila 0".
+                dto.setNumeroFila(row.getRowNum() + 1);
+                dto.setNombre(obtenerValorCelda(row.getCell(0),maxLargoCelda));
+                dto.setDescripcion(obtenerValorCelda(row.getCell(1),maxLargoCelda));
+                dto.setMoneda(obtenerValorCelda(row.getCell(2),maxLargoCelda));
+                dto.setPrecio(obtenerValorCelda(row.getCell(3),maxLargoCelda));
+                dto.setActivo(obtenerValorCelda(row.getCell(4),maxLargoCelda));
                 lista.add(dto);
             }
 
         }
-        catch (IOException e) {
-            throw new ErrorProcesamientoArchivoException("Error al procesar archivo Excel", e);
+        // Orden de catch: AppException PRIMERO (antes de IOException y de Exception).
+        // Es el orden correcto y hay que mantenerlo: si este catch se moviera debajo de
+        // catch (Exception), todos los errores de negocio quedarian enmascarados.
+        //
+        // Caso concreto: planilla valida (Excel legible) a la que le falta la columna "precio".
+        // validarColumna() se ejecuta dentro del try y lanza ColumnasFaltantesException,
+        // que es ReglaNegocioException -> AppException (BAD_REQUEST / BUSINESS_RULE).
+        // Este primer catch la reenvia intacta, asi que GlobalExceptionHandler la mapea a un
+        // ProblemDetail 400 con:
+        //   status = 400
+        //   title  = "BUSINESS_RULE"
+        //   detail = "Faltan columnas obligatorias en el archivo: [precio]"
+        // O sea: el usuario SI recibe el mensaje especifico de columnas faltantes, y NO el
+        // generico "El archivo no tiene un formato Excel valido o esta danado" (ese es el
+        // ultimo catch, reservado para Exception que no sea AppException).
+        catch (AppException e){
+            throw e;
         }
+
+        catch (IOException e) {
+            if (esZipBomb(e)) {
+                throw new ArchivoComprimidoPeligrosoException(e);
+            }
+
+            throw new ErrorProcesamientoArchivoException(
+                    "Error al procesar archivo Excel",
+                    e
+            );
+        }
+
         catch (Exception e){
             throw new ErrorProcesamientoArchivoException("El archivo no tiene un formato Excel válido o está dañado", e);
         }
@@ -61,13 +117,15 @@ public class ProcesarExcelService {
     }
 
 
-    private void validarColumna(Row row){
+    private void validarColumna(Row row, int maxLargoCelda){
 
         List<String> columnaObligatoria= List.of("nombre","descripcion","moneda","precio","activo");
         List<String> columnasExistentes= new ArrayList<>();
         List<String> faltante= new ArrayList<>();
         for (Cell cel:row){
-            columnasExistentes.add(cel.getStringCellValue().trim().toLowerCase());
+            columnasExistentes.add(
+                    obtenerValorCelda(cel,maxLargoCelda).toLowerCase()
+            );
         }
 
         for (String col: columnaObligatoria){
@@ -81,48 +139,70 @@ public class ProcesarExcelService {
         }
     }
 
-    public static String obtenerValorCelda(Cell cell) {
+    public String obtenerValorCelda(Cell cell, int maxLargoCelda) {
 
         if (cell == null) {
             return "";
         }
 
+        String valor;
+
         switch (cell.getCellType()) {
 
             case STRING:
-                return cell.getStringCellValue().trim();
-
+                valor= cell.getStringCellValue().trim();
+                break;
             case NUMERIC:
                 if (DateUtil.isCellDateFormatted(cell)) {
                     LocalDate fecha = cell.getDateCellValue()
                             .toInstant()
                             .atZone(ZoneId.systemDefault())
                             .toLocalDate();
-                    return fecha.toString(); // formato ISO yyyy-MM-dd
+
+                    valor= fecha.toString(); // formato ISO yyyy-MM-dd
                 } else {
-                    double valor = cell.getNumericCellValue();
+                    double numero = cell.getNumericCellValue();
 
-                    // Evita que 1500.0 salga como "1500.0"
-                    if (valor == (long) valor) {
-                        return String.valueOf((long) valor);
+                    if (numero == (long) numero) {
+                        valor = String.valueOf((long) numero);
+                    } else {
+                        valor = String.valueOf(numero);
                     }
-
-                    return String.valueOf(valor);
                 }
+                break;
 
             case BOOLEAN:
-                return String.valueOf(cell.getBooleanCellValue());
+                valor =String.valueOf(cell.getBooleanCellValue());
+                break;
 
             case FORMULA:
                 throw new FormulaNoPermitidaException();
             case BLANK:
-                return "";
+                valor= "";
+                break;
 
             default:
-                return "";
+                valor= "";
         }
+        if (valor.length() > maxLargoCelda) {
+            throw new CeldaDemasiadoLargaException(cell.getRowIndex()+1,cell.getColumnIndex()+1,valor.length());}
+        return valor;
     }
 
 
+    private boolean esZipBomb(Throwable exception) {
+        Throwable actual = exception;
+
+        while (actual != null) {
+            if (actual.getMessage() != null &&
+                    actual.getMessage().contains("Zip bomb detected")) {
+                return true;
+            }
+
+            actual = actual.getCause();
+        }
+
+        return false;
+    }
 
 }

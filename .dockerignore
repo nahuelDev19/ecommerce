@@ -1,0 +1,14 @@
+# Evita enviar al contexto de build lo que no hace falta (build mas rapido).
+target/
+.git/
+.gitignore
+.gitattributes
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+HELP.md
+*.md
+Dockerfile
+.dockerignore

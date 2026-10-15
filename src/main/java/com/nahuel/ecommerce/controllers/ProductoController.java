@@ -1,11 +1,10 @@
 package com.nahuel.ecommerce.controllers;
 
 import com.nahuel.ecommerce.dtos.FiltrosBusquedaProductoDto;
+import com.nahuel.ecommerce.dtos.ImportacionJobDto;
 import com.nahuel.ecommerce.dtos.ProductoDto;
-import com.nahuel.ecommerce.dtos.ResultadoImportacionDto;
-import com.nahuel.ecommerce.exceptions.ArchivoVacioException;
-import com.nahuel.ecommerce.exceptions.FormatoInvalidoException;
-import com.nahuel.ecommerce.pipeline.ProcesarArchivosService;
+import com.nahuel.ecommerce.services.ImportacionService;
+import com.nahuel.ecommerce.services.ProductoService;
 import com.nahuel.ecommerce.services.ProductoServiceImp;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,8 +22,8 @@ import java.util.UUID;
 @RequestMapping("/api/productos")
 public class ProductoController {
 
-    private final ProductoServiceImp productoService;
-    private final ProcesarArchivosService procesarArchivosService;
+    private final ProductoService productoService;
+    private final ImportacionService importacionService;
 
     @PostMapping
     public ResponseEntity<?> crearProducto(@Valid @RequestBody ProductoDto dto){
@@ -60,26 +58,20 @@ public class ProductoController {
         return ResponseEntity.ok(productoService.listarDescontinuados());
     }
 
-
-
     @PutMapping("/actualizar/{id}")
     public ResponseEntity<?> actualizarProducto(@Valid @RequestBody ProductoDto dto,@PathVariable UUID id){
         return ResponseEntity.ok(productoService.actualizarPorId(id,dto));
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<?> upload(@RequestParam MultipartFile archivo){
-        if(archivo==null || archivo.isEmpty()){
-            throw new ArchivoVacioException();
-        }
-        String nombre= archivo.getOriginalFilename();
-        if(nombre==null || (!nombre.endsWith(".xls") && !nombre.endsWith(".xlsx"))){
-            throw new FormatoInvalidoException(nombre);
-        }
+    public ResponseEntity<UUID> upload(@RequestParam MultipartFile archivo,@RequestParam(defaultValue = "false") boolean soloValidacion) {
+        UUID id = importacionService.subirArchivo(archivo, soloValidacion);
+        return ResponseEntity.accepted().header("Location","/api/productos/importaciones/"+id).body(id);
+    }
 
-
-        ResultadoImportacionDto resultado=  procesarArchivosService.procesarArchivo(archivo);
-        return ResponseEntity.status(HttpStatus.CREATED).body(resultado);
-
+    @GetMapping("/importaciones/{id}")
+    public ResponseEntity<ImportacionJobDto> consultarImportacion(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(importacionService.consulta(id));
     }
 }

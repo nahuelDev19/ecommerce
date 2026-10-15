@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public interface ProductoRepository extends JpaRepository<Producto, UUID> {
@@ -36,4 +37,6 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID> {
 
 
     boolean existsByNombre(String nombre);
+    @Query("SELECT p.nombre FROM Producto p WHERE p.nombre IN :nombres")
+    Set<String> findNombresExistentes(@Param("nombres") Set<String> nombres);
 }

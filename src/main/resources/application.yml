@@ -1,4 +1,13 @@
+
+
 spring:
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 12MB
+      file-size-threshold: 2KB
+
   datasource:
     url: ${DB_URL}
     username: ${DB_USER}
@@ -13,13 +22,38 @@ spring:
     hibernate:
       ddl-auto: validate
     show-sql: false
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 500
+        order_inserts: true
+        order_updates: true
+
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:3600000}
 
-
+importacion:
+    max-tamanio-bytes: 10485760
+    max-filas: 50000
+    max-columnas: 50
+    max-largo-celda: 500
+    min-ratio-descompresion: 0.1   # anti zip bomb: hasta 10x de expansión
+    max-texto-descomprimido: 10000000
+    tamanio-lote: 500
+    directorio-temporal: ${java.io.tmpdir}/importaciones
 supabase:
   url: ${SUPABASE_URL}                    # https://xxxx.supabase.co
 
 server:
   port: ${PORT:8080}
+
+logging:
+  level:
+    # Verificacion del guardado por lotes.
+    # Hibernate 7.4.1 (Spring Boot 4.1.0): la categoria real del logger es
+    # org.hibernate.orm.jdbc.batch. NO son validas org.hibernate.engine.jdbc.batch
+    # (es el paquete, no el logger) ni ...batch.internal.BatchingBatch (no existe en 7.x).
+    # TRACE emite "Executing JDBC batch (500 / 500)" una vez por lote -> 40 lineas para 20.000.
+    # Ojo: tambien emite "Adding to JDBC batch" por cada fila (~20.000 lineas): filtrar por "Executing".
+    org.hibernate.orm.jdbc.batch: TRACE

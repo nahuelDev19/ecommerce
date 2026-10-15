@@ -17,6 +17,7 @@
         private int lineasDescartadasPorDuplicados;
         private int productosImportados;
         private List<ErrorImportacionDto> errores = new ArrayList<>();
+        private boolean estaLimpio;
 
 
 
