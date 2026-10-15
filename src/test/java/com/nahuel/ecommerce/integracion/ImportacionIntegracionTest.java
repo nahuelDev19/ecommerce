@@ -31,6 +31,7 @@ import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 @AutoConfigureMockMvc
 class ImportacionIntegracionTest extends TestDeIntegracion {
@@ -228,7 +229,108 @@ class ImportacionIntegracionTest extends TestDeIntegracion {
         assertThat(productoRepository.count()).isZero();
     }
 
+    @Test
+    @DisplayName("21 - El informe identifica la fila de cada producto invalido")
+    void informaElNumeroCorrectoDeCadaFilaInvalida() throws Exception {
+        byte[] excel = ExcelTestFactory.excel(new Object[][]{
+                // La fila 1 es el encabezado. Intercalamos filas buenas y malas.
+                {"Teclado", "Valido", "ARS", 100, true},                  // fila 2
+                {"Auriculares", "Precio invalido", "ARS", "abc", true}, // fila 3
+                {"Mouse", "Valido", "USD", 20, true},                    // fila 4
+                {"Parlantes", "Moneda invalida", "XXX", 100, true}        // fila 5
+        });
+
+        ImportacionJob job = esperarTrabajo(obtenerIdJob(
+                subirExcel(excel, "productos.xlsx", admin)));
+
+        assertThat(job.getEstado()).isEqualTo(EstadoImportacion.COMPLETA_CON_ERRORES);
+        assertThat(job.getCantidadFilas()).isEqualTo(4);
+        assertThat(job.getFilasConError()).isEqualTo(2);
+        assertThat(job.getDetalleErrores()).isNotNull();
+        // Comprobamos numero Y producto juntos: no alcanza con encontrar ambos por separado.
+        assertThat(job.getDetalleErrores().lines().toList()).hasSize(2)
+                .anySatisfy(linea -> assertThat(linea).startsWith("Fila 3 (Auriculares):"))
+                .anySatisfy(linea -> assertThat(linea).startsWith("Fila 5 (Parlantes):"));
+    }
+
+    @Test
+    @DisplayName("24 - Solo validar no guarda y permite importar despues el mismo archivo")
+    void soloValidacionPermiteImportarDespuesElMismoArchivo() throws Exception {
+        byte[] excel = ExcelTestFactory.excel(new Object[][]{
+                {"Teclado", "Mecanico", "ARS", 100, true},
+                {"Mouse", "Inalambrico", "USD", 20, true}
+        });
+
+        ImportacionJob validacion = esperarTrabajo(obtenerIdJob(
+                subirExcel(excel, "productos.xlsx", admin, true)));
+
+        assertThat(validacion.getEstado()).isEqualTo(EstadoImportacion.COMPLETADO);
+        assertThat(validacion.isSoloValidacion()).isTrue();
+        assertThat(validacion.getCantidadFilas()).isEqualTo(2);
+        assertThat(validacion.getProductosImportados()).isZero();
+        assertThat(productoRepository.count()).isZero();
+
+        // Reutilizamos los mismos bytes y OMITIMOS el parametro: probamos su valor por defecto.
+        ImportacionJob importacion = esperarTrabajo(obtenerIdJob(
+                subirExcel(excel, "productos.xlsx", admin)));
+
+        assertThat(importacion.getId()).isNotEqualTo(validacion.getId());
+        assertThat(importacion.getHuellaContenido()).isEqualTo(validacion.getHuellaContenido());
+        assertThat(importacion.isSoloValidacion()).isFalse();
+        assertThat(importacion.getEstado()).isEqualTo(EstadoImportacion.COMPLETADO);
+        assertThat(importacion.getProductosImportados()).isEqualTo(2);
+        assertThat(productoRepository.findAll()).extracting(Producto::getNombre)
+                .containsExactlyInAnyOrder("Teclado", "Mouse");
+        assertThat(importacionJobRepository.count()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("25 - Consultar una importacion ajena devuelve 404")
+    void noPermiteConsultarLaImportacionDeOtroUsuario() throws Exception {
+        Usuario otroUsuario = TestDataFactory.ana();
+        otroUsuario.setId(null);
+        otroUsuario = usuarioRepository.save(otroUsuario);
+        byte[] excel = ExcelTestFactory.excel(new Object[][]{
+                {"Teclado", "Mecanico", "ARS", 100, true}
+        });
+        UUID idJob = obtenerIdJob(subirExcel(excel, "productos.xlsx", admin));
+        esperarTrabajo(idJob);
+
+        // Control positivo: evita un falso exito si el endpoint no existe o rechaza a todos.
+        MvcResult propia = consultarImportacion(idJob, admin);
+        assertThat(propia.getResponse().getStatus()).isEqualTo(200);
+        String idConsultado = JsonPath.read(propia.getResponse().getContentAsString(), "$.id");
+        assertThat(idConsultado).isEqualTo(idJob.toString());
+
+        MvcResult ajena = consultarImportacion(idJob, otroUsuario);
+        // Elegimos 404 para no revelar la existencia de una importacion ajena.
+        // El usuario esta autenticado, por eso no esperamos 401.
+        assertThat(ajena.getResponse().getStatus()).isEqualTo(404);
+        assertThat(ajena.getResponse().getContentAsString()).doesNotContain("productos.xlsx");
+    }
+
     // ---------- helpers reusables ----------
+
+    private UUID obtenerIdJob(MvcResult respuesta) throws Exception {
+        assertThat(respuesta.getResponse().getStatus()).isEqualTo(202);
+        String id = JsonPath.read(respuesta.getResponse().getContentAsString(), "$");
+        return UUID.fromString(id);
+    }
+
+    private MvcResult consultarImportacion(UUID idJob, Usuario quien) throws Exception {
+        return mockMvc.perform(get("/api/productos/importaciones/{id}", idJob)
+                        .with(jwt.bearerToken(quien)))
+                .andReturn();
+    }
+
+    private MvcResult subirExcel(byte[] contenido, String nombreArchivo, Usuario quien,
+                                boolean soloValidacion) throws Exception {
+        return mockMvc.perform(multipart("/api/productos/upload")
+                        .file(new MockMultipartFile("archivo", nombreArchivo, XLSX, contenido))
+                        .param("soloValidacion", String.valueOf(soloValidacion))
+                        .with(jwt.bearerToken(quien)))
+                .andReturn();
+    }
 
     private MvcResult subirExcel(byte[] contenido, String nombreArchivo, Usuario quien) throws Exception {
         return mockMvc.perform(multipart("/api/productos/upload")
