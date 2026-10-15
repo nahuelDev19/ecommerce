@@ -56,18 +56,4 @@ public class ImportacionJob {
         fechaCreacion = LocalDateTime.now();
     }
 
-
-
-/*
-Completar la clase ImportacionJob, que hoy está vacía.
-Es la entidad que representa un trabajo de importación y
-tiene que guardar: el id, el nombre del archivo que subió
-el usuario, la ruta del archivo temporal, la  (ver punto 9), si es una corrida de sólo
-validación (ver punto 11), en qué estado está, qué usuario
-lo pidió, cuántas filas tenía el archivo, cuántos productos
-se importaron, cuántas filas tuvieron error, el detalle de
-esos errores, un mensaje corto si falló, y las fechas de
-creación y finalización.
-
- */
 }
