@@ -35,13 +35,13 @@ public class ProcesarArchivosService {
     private final GuardadoPorLotesService guardadoPorLotesService;
 
 
-    public ResultadoImportacionDto procesarArchivo(Path file){
+    public ResultadoImportacionDto procesarArchivo(Path file,boolean soloValidacion){
 
 
         ValidacionImportacion v= validarArchivo(file);
-        ResultadoImportacionDto resultado= confirmar(v);
+        //ResultadoImportacionDto resultado= confirmar(v);
 
-        return resultado;
+        return soloValidacion ? validarSinGuardar(v) : confirmar(v);
     }
 
 
@@ -88,6 +88,10 @@ Set<String> nombres = productosTransformados.stream().map(Producto::getNombre).c
         return v.reporte();
     }
 
-
+    /** Modo sólo validación: el mismo corte por errores que confirmar(), pero sin guardar nada. */
+    private ResultadoImportacionDto validarSinGuardar(ValidacionImportacion v) {
+        if (v.tieneErrores()) throw new ArchivoConErroresException("Archivo con errores, no se guarda", v.reporte());
+        return v.reporte();
+    }
 
 }

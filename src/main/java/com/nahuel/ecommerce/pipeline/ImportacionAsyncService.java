@@ -36,7 +36,7 @@ public class ImportacionAsyncService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("El Job no fue encontrado"));
         try {
         // Todo lo que está acá adentro corre en un hilo del pool (importacion-1, importacion-2...)
-        ResultadoImportacionDto r= procesarArchivosService.procesarArchivo(file);
+        ResultadoImportacionDto r= procesarArchivosService.procesarArchivo(file, job.isSoloValidacion());
         job.setEstado(EstadoImportacion.COMPLETADO);
         job.setProductosImportados(r.getProductosImportados());
         job.setCantidadFilas(r.getLineasProcesadas());

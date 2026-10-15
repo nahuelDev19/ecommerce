@@ -52,7 +52,7 @@ public class ImportacionServiceImp implements ImportacionService {
         String huella = copiarYCalcularHuella(archivo, destino);
 
         if(!soloValidacion){
-            Optional<ImportacionJob> existente = importacionJobRepository.findFirstByHuellaContenidoAndValidacionFalseOrderByFechaCreacionDesc(huella);
+            Optional<ImportacionJob> existente = importacionJobRepository.findFirstByHuellaContenidoAndSoloValidacionFalseOrderByFechaCreacionDesc(huella);
             if (existente.isPresent() && existente.get().getEstado()!= EstadoImportacion.FALLIDOS) {
                 borrarArchivo(destino);
                 throw new ArchivoDuplicadoException(existente.get().getId());
@@ -95,7 +95,7 @@ public class ImportacionServiceImp implements ImportacionService {
     public ImportacionJobDto consulta(UUID id){
         ImportacionJob job = importacionJobRepository.findById(id).orElseThrow(()-> new RecursoNoEncontradoException("Importacion no encontrado"));
         UUID idUsuarioActual= usuarioAutenticadoService.actual().getId();
-        if(job.getUsuario().getId().equals(idUsuarioActual)){
+        if(!job.getUsuario().getId().equals(idUsuarioActual)){
             throw new RecursoNoEncontradoException("Importacion no encontrado");
         }
 

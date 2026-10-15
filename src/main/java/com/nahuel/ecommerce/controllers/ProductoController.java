@@ -1,6 +1,7 @@
 package com.nahuel.ecommerce.controllers;
 
 import com.nahuel.ecommerce.dtos.FiltrosBusquedaProductoDto;
+import com.nahuel.ecommerce.dtos.ImportacionJobDto;
 import com.nahuel.ecommerce.dtos.ProductoDto;
 import com.nahuel.ecommerce.services.ImportacionService;
 import com.nahuel.ecommerce.services.ProductoService;
@@ -66,5 +67,11 @@ public class ProductoController {
     public ResponseEntity<UUID> upload(@RequestParam MultipartFile archivo,@RequestParam(defaultValue = "false") boolean soloValidacion) {
         UUID id = importacionService.subirArchivo(archivo, soloValidacion);
         return ResponseEntity.accepted().header("Location","/api/productos/importaciones/"+id).body(id);
+    }
+
+    @GetMapping("/importaciones/{id}")
+    public ResponseEntity<ImportacionJobDto> consultarImportacion(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(importacionService.consulta(id));
     }
 }
