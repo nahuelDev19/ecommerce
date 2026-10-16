@@ -4,6 +4,7 @@ import com.nahuel.ecommerce.entitys.*;
 import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
 import com.nahuel.ecommerce.exceptions.ReglaNegocioException;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
+import com.nahuel.ecommerce.repositories.OrdenRepository;
 import com.nahuel.ecommerce.services.CalculadoraCarrito;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,15 @@ public class CheckoutServiceImp implements CheckoutService {
 
     private final CarritoRepository carritoRepository;
     private final CalculadoraCarrito calculadoraCarrito;
+    private final OrdenRepository ordenRepository;
+
+    @Override
+    @Transactional(readOnly = true)
+    public EstadoOrden consultarEstadoOrden(UUID ordenId, UUID usuarioId) {
+        Orden orden = ordenRepository.findByIdAndUsuarioId(ordenId, usuarioId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Orden no encontrada"));
+        return orden.getEstado();
+    }
 
 
 
