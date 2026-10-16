@@ -42,7 +42,8 @@ public class SecurityConfig {
                             .requestMatchers("/api/cupones/**").hasRole("ADMIN")
                             .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
                             .requestMatchers("/auth/**").permitAll()
-                            .anyRequest().authenticated()
+                            .requestMatchers("/api/webhooks/mercadopago").permitAll()
+                                .anyRequest().authenticated()
 
 
                 )
