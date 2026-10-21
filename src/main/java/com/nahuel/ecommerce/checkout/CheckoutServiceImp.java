@@ -59,7 +59,13 @@ public class CheckoutServiceImp implements CheckoutService {
         for (ItemCarrito item: carrito.getItems()){
             TipoMoneda monedaProducto;
             try {
-                monedaProducto = TipoMoneda.valueOf(item.getProducto().getMoneda());
+                String codigoMoneda = item.getProducto().getMoneda();
+                // El catálogo usa ARS, pero nuestro enum todavía representa pesos como ARG.
+                // Adaptamos ese código al leer el producto, sin cambiar los datos existentes.
+                // El adapter y el webhook ya traducen ARG a ARS al comunicarse con Mercado Pago.
+                monedaProducto = "ARS".equals(codigoMoneda)
+                        ? TipoMoneda.ARG
+                        : TipoMoneda.valueOf(codigoMoneda);
             } catch (IllegalArgumentException | NullPointerException ex) {
                 throw new ReglaNegocioException("El producto tiene una moneda no válida");
             }
