@@ -4,14 +4,27 @@ import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.support.JwtTestHelper;
 import com.nahuel.ecommerce.support.JwtTestTokenValidator;
 import com.nahuel.ecommerce.support.TestDataFactory;
-import io.jsonwebtoken.Claims;
+import com.nahuel.ecommerce.repositories.UsuarioRepository;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.JwtException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.test.util.ReflectionTestUtils;
+import jakarta.servlet.FilterChain;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Date;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @DisplayName("Pruebas de Seguridad contra Token Manipulation (JWT)")
 class TokenManipulationJwtFilterTest {
@@ -19,14 +32,12 @@ class TokenManipulationJwtFilterTest {
     private JwtTestHelper jwtTestHelper;
     private JwtTestTokenValidator jwtTestTokenValidator;
     private Usuario usuarioCliente;
-    private Usuario usuarioAdmin;
 
     @BeforeEach
     void setUp() {
         jwtTestHelper = new JwtTestHelper();
         jwtTestTokenValidator = new JwtTestTokenValidator();
         usuarioCliente = TestDataFactory.usuarioCliente();
-        usuarioAdmin = TestDataFactory.usuarioAdmin();
     }
 
     @Nested
@@ -67,34 +78,54 @@ class TokenManipulationJwtFilterTest {
     class RoleAndPrivilegeManipulationTests {
 
         @Test
-        @DisplayName("Verificación de Claims: Token legítimo de cliente debe conservar su rol de CLIENTE")
-        void parsearClaims_ConUsuarioClienteLegitimo_DebeContenerRolCliente() {
-            // Arrange
-            String tokenCliente = jwtTestHelper.tokenParaUsuario(usuarioCliente);
+        @DisplayName("El rol ADMIN del token no reemplaza los permisos CLIENTE del usuario cargado")
+        void tokenConRolAdmin_conservaPermisosDelUsuarioCargado() throws Exception {
+            // Reemplaza las dos expectativas antiguas sobre el claim rol:
+            // producción obtiene los permisos del usuario, no de ese claim.
+            // Usamos servicio y filtro reales para comprobar esa regla.
+            byte[] clave = "clave-ficticia-exclusiva-test-roles-0123456789abcdef"
+                    .getBytes(StandardCharsets.UTF_8);
+            JwtService servicioReal = new JwtService();
+            ReflectionTestUtils.setField(servicioReal, "secretKey",
+                    Base64.getEncoder().encodeToString(clave));
 
-            // Act
-            Claims claims = jwtTestTokenValidator.parsearClaims(tokenCliente);
-            String rolExtraido = jwtTestTokenValidator.extraerRol(tokenCliente);
+            // La firma es válida a propósito: aislamos el origen de los permisos.
+            // No representa una alteración del token sin conocer la clave.
+            String token = Jwts.builder()
+                    .subject(usuarioCliente.getId().toString())
+                    .claim("rol", "ADMIN")
+                    .issuedAt(new Date())
+                    .expiration(new Date(System.currentTimeMillis() + 60000))
+                    .signWith(Keys.hmacShaKeyFor(clave))
+                    .compact();
 
-            // Assert
-            assertTrue(jwtTestTokenValidator.esValido(tokenCliente));
-            assertEquals("CLIENTE", rolExtraido);
-            assertEquals("CLIENTE", claims.get("rol", String.class));
-            assertNotEquals("ADMIN", rolExtraido);
-        }
+            UsuarioRepository usuarios = mock(UsuarioRepository.class);
+            UserDetailsService detalles = mock(UserDetailsService.class);
+            when(usuarios.findById(usuarioCliente.getId())).thenReturn(Optional.of(usuarioCliente));
+            when(detalles.loadUserByUsername(usuarioCliente.getEmail())).thenReturn(usuarioCliente);
+            JwtFilter filtroReal = new JwtFilter(servicioReal, detalles, usuarios);
+            MockHttpServletRequest request = new MockHttpServletRequest();
+            request.addHeader("Authorization", "Bearer " + token);
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            FilterChain cadena = mock(FilterChain.class);
 
-        @Test
-        @DisplayName("Aislamiento de Roles: Token legítimo de admin debe certificar el rol ADMIN")
-        void parsearClaims_ConUsuarioAdminLegitimo_DebeContenerRolAdmin() {
-            // Arrange
-            String tokenAdmin = jwtTestHelper.tokenParaUsuario(usuarioAdmin);
+            SecurityContextHolder.clearContext();
+            try {
+                filtroReal.doFilterInternal(request, response, cadena);
 
-            // Act
-            String rolExtraido = jwtTestTokenValidator.extraerRol(tokenAdmin);
-
-            // Assert
-            assertTrue(jwtTestTokenValidator.esValido(tokenAdmin));
-            assertEquals("ADMIN", rolExtraido);
+                var autenticacion = SecurityContextHolder.getContext().getAuthentication();
+                assertNotNull(autenticacion);
+                assertSame(usuarioCliente, autenticacion.getPrincipal());
+                assertEquals(java.util.List.of("ROLE_CLIENTE"), autenticacion.getAuthorities()
+                        .stream().map(a -> a.getAuthority()).toList());
+                verify(usuarios).findById(usuarioCliente.getId());
+                verify(detalles).loadUserByUsername(usuarioCliente.getEmail());
+                verify(cadena).doFilter(request, response);
+                assertEquals(200, response.getStatus());
+            } finally {
+                // Evita que la autenticación de este caso contamine otros tests.
+                SecurityContextHolder.clearContext();
+            }
         }
     }
 }

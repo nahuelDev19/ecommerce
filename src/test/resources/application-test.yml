@@ -33,3 +33,8 @@ logging:
         root: WARN
         com.nahuel.ecommerce: INFO
         org.springframework.security: WARN
+
+MERCADOPAGO_WEBHOOK_SECRET: secreto-falso-solo-tests
+MERCADOPAGO_ACCESS_TOKEN: token-falso-solo-tests
+MERCADOPAGO_API_URL: https://mercadopago.test.invalid
+MERCADOPAGO_NOTIFICATION_URL: https://backend.test.invalid/api/webhooks/mercadopago

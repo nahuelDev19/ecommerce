@@ -2,7 +2,6 @@ package com.nahuel.ecommerce.controllers;
 
 import com.nahuel.ecommerce.config.SecurityConfig;
 import com.nahuel.ecommerce.entitys.Usuario;
-import com.nahuel.ecommerce.pipeline.ProcesarArchivosService;
 import com.nahuel.ecommerce.repositories.UsuarioRepository;
 import com.nahuel.ecommerce.security.JwtService;
 import com.nahuel.ecommerce.security.UserDetailsServiceImp;
@@ -16,7 +15,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
+import com.nahuel.ecommerce.services.ImportacionService;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -38,8 +37,7 @@ class ProductoSeguridadTest {
     private UserDetailsServiceImp userDetailsService; // en vez de UserDetailsService
 
     @MockitoBean
-    private ProcesarArchivosService procesarArchivosService;
-
+    private ImportacionService importacionService;
     @MockitoBean
     private JwtService jwtService;
 

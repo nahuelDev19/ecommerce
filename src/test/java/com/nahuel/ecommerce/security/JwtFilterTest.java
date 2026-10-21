@@ -8,6 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -29,6 +30,12 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(org.mockito.junit.jupiter.MockitoExtension.class)
 class JwtFilterTest {
+
+    @AfterEach
+    void limpiarContextoDeSeguridad() {
+        // Los casos que autentican deben dejar limpio el hilo para otros tests.
+        SecurityContextHolder.clearContext();
+    }
 
     @Mock
     private JwtService jwtService;

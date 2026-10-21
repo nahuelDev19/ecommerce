@@ -5,6 +5,7 @@ import com.nahuel.ecommerce.exceptions.AccesoDenegadoException;
 import com.nahuel.ecommerce.exceptions.GlobalExceptionHandler;
 import com.nahuel.ecommerce.services.UsuarioService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.http.MediaType;
@@ -23,6 +24,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class UsuarioIdorTest {
+
+    @AfterEach
+    void limpiarContextoDeSeguridad() {
+        // El contexto pertenece al hilo: sin limpieza, otro test puede recibir
+        // este usuario en lugar del usuario identificado por su propio JWT.
+        SecurityContextHolder.clearContext();
+    }
 
     private MockMvc mockMvc;
     private UsuarioService usuarioService;
