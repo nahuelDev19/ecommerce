@@ -37,6 +37,9 @@ mercadopago:
   webhook-secret: ${MERCADOPAGO_WEBHOOK_SECRET}
   access-token: ${MERCADOPAGO_ACCESS_TOKEN}
   api-url: ${MERCADOPAGO_API_URL}
+checkout:
+  vigencia-orden: PT2H
+
 importacion:
     max-tamanio-bytes: 10485760
     max-filas: 50000

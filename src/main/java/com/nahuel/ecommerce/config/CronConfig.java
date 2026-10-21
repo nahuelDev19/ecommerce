@@ -1,8 +1,10 @@
 package com.nahuel.ecommerce.config;
 
 import com.nahuel.ecommerce.entitys.Carrito;
+import com.nahuel.ecommerce.entitys.EstadoOrden;
 import com.nahuel.ecommerce.entitys.Usuario;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
+import com.nahuel.ecommerce.repositories.OrdenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,6 +25,18 @@ import static com.nahuel.ecommerce.entitys.EstadoCarrito.ABANDONADO;
 public class CronConfig {
 
     private final CarritoRepository carritoRepository;
+    private final OrdenRepository ordenRepository;
+
+    // Cada dos horas revisa las órdenes cuyo vencimiento ya se alcanzó.
+    @Scheduled(cron = "0 0 */2 * * *", zone = "America/Argentina/Buenos_Aires")
+    public void cancelarOrdenesVencidas() {
+        int cantidad = ordenRepository.cancelarOrdenesVencidas(
+                EstadoOrden.PENDIENTE_PAGO,
+                EstadoOrden.CANCELADA,
+                Instant.now()
+        );
+        log.info("Cron de vencimiento: {} órdenes canceladas", cantidad);
+    }
 
 
     @Scheduled(fixedRate = 432000000L) // 5 días

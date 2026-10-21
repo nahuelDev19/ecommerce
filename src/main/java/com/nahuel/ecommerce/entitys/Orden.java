@@ -45,6 +45,8 @@ public class Orden {
     private TipoMoneda moneda;
 
     private Instant creadoEn;
+    @Column(name = "vence_en")
+    private Instant venceEn;
     @Column(name = "pagado_en")
     private Instant pagadoEn;
     private Instant actualizadoEn;

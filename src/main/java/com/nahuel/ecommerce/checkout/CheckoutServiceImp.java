@@ -7,10 +7,12 @@ import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.OrdenRepository;
 import com.nahuel.ecommerce.services.CalculadoraCarrito;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -21,6 +23,9 @@ public class CheckoutServiceImp implements CheckoutService {
     private final CarritoRepository carritoRepository;
     private final CalculadoraCarrito calculadoraCarrito;
     private final OrdenRepository ordenRepository;
+
+    @Value("${checkout.vigencia-orden}")
+    private String vigenciaOrden;
 
     @Override
     @Transactional(readOnly = true)
@@ -35,6 +40,10 @@ public class CheckoutServiceImp implements CheckoutService {
     @Override
     @Transactional
     public String iniciarCheckout(UUID usuarioId) {
+        Duration vigencia = Duration.parse(vigenciaOrden);
+        if (vigencia.isZero() || vigencia.isNegative()) {
+            throw new IllegalStateException("La vigencia de la orden debe ser positiva");
+        }
         Carrito carrito= carritoRepository.findByUsuarioIdAndEstadoCarrito(usuarioId, EstadoCarrito.ACTIVO).orElseThrow(()-> new RecursoNoEncontradoException("El Carrito no fue encontrado o no esta activo"));
         if(carrito.getItems().isEmpty()){
             throw new ReglaNegocioException("No se puede iniciar una compra con un carrito vacío");
@@ -76,6 +85,7 @@ public class CheckoutServiceImp implements CheckoutService {
         orden.setTotal(subtotal.subtract(descuento));
         orden.setMoneda(monedaOrden);
         orden.setCreadoEn(momentoActual);
+        orden.setVenceEn(momentoActual.plus(vigencia));
         orden.setActualizadoEn(momentoActual);
 
         // Pendiente: persistir la orden y solicitar la URL mediante PasarelaPago.
