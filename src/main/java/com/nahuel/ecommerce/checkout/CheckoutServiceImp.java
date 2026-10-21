@@ -66,6 +66,7 @@ public class CheckoutServiceImp implements CheckoutService {
             itemOrden.setProductoId(item.getProducto().getId());
             itemOrden.setNombreProducto(item.getProducto().getNombre());
             orden.getItems().add(itemOrden);
+            orden.setEstado(EstadoOrden.PENDIENTE_PAGO);
             subtotal = subtotal.add(itemOrden.getSubtotal());
         }
 
@@ -78,6 +79,7 @@ public class CheckoutServiceImp implements CheckoutService {
         orden.setActualizadoEn(momentoActual);
 
         // Pendiente: persistir la orden y solicitar la URL mediante PasarelaPago.
+        ordenRepository.save(orden);
         return "";
     }
 }

@@ -37,10 +37,15 @@ public class Orden {
     private BigDecimal descuentoTotal = BigDecimal.ZERO;
 
     private BigDecimal total;
+    // ID externo del pago aprobado que pagó esta orden.
+    @Column(name = "pago_aprobado_id")
+    private String paymentId;
 
     @Enumerated(EnumType.STRING)
     private TipoMoneda moneda;
 
     private Instant creadoEn;
+    @Column(name = "pagado_en")
+    private Instant pagadoEn;
     private Instant actualizadoEn;
 }

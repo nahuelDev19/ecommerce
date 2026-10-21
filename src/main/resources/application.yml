@@ -34,9 +34,9 @@ jwt:
   expiration: ${JWT_EXPIRATION:3600000}
 
 mercadopago:
-  webhook:
-    secret: ${MERCADOPAGO_WEBHOOK_SECRET}
-
+  webhook-secret: ${MERCADOPAGO_WEBHOOK_SECRET}
+  access-token: ${MERCADOPAGO_ACCESS_TOKEN}
+  api-url: ${MERCADOPAGO_API_URL}
 importacion:
     max-tamanio-bytes: 10485760
     max-filas: 50000
