@@ -37,6 +37,7 @@ mercadopago:
   webhook-secret: ${MERCADOPAGO_WEBHOOK_SECRET}
   access-token: ${MERCADOPAGO_ACCESS_TOKEN}
   api-url: ${MERCADOPAGO_API_URL}
+  notification-url: ${MERCADOPAGO_NOTIFICATION_URL}
 checkout:
   vigencia-orden: PT2H
 

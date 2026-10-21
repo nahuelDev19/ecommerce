@@ -23,6 +23,7 @@ public class CheckoutServiceImp implements CheckoutService {
     private final CarritoRepository carritoRepository;
     private final CalculadoraCarrito calculadoraCarrito;
     private final OrdenRepository ordenRepository;
+    private final PasarelaPago pasarelaPago;
 
     @Value("${checkout.vigencia-orden}")
     private String vigenciaOrden;
@@ -88,8 +89,9 @@ public class CheckoutServiceImp implements CheckoutService {
         orden.setVenceEn(momentoActual.plus(vigencia));
         orden.setActualizadoEn(momentoActual);
 
-        // Pendiente: persistir la orden y solicitar la URL mediante PasarelaPago.
+        // El ID generado identifica esta compra en la preferencia y en el webhook.
         ordenRepository.save(orden);
-        return "";
+        // El adapter obtiene el enlace; crear la preferencia no aprueba la orden.
+        return pasarelaPago.crearUrlPago(orden);
     }
 }
