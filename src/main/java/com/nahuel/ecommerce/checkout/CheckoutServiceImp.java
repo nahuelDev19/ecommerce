@@ -1,10 +1,12 @@
 package com.nahuel.ecommerce.checkout;
 
 import com.nahuel.ecommerce.entitys.*;
+import com.nahuel.ecommerce.dtos.CheckoutResponseDto;
 import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
 import com.nahuel.ecommerce.exceptions.ReglaNegocioException;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.OrdenRepository;
+import com.nahuel.ecommerce.repositories.PagoRepository;
 import com.nahuel.ecommerce.services.CalculadoraCarrito;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +25,7 @@ public class CheckoutServiceImp implements CheckoutService {
     private final CarritoRepository carritoRepository;
     private final CalculadoraCarrito calculadoraCarrito;
     private final OrdenRepository ordenRepository;
+    private final PagoRepository pagoRepository;
     private final PasarelaPago pasarelaPago;
 
     @Value("${checkout.vigencia-orden}")
@@ -40,12 +43,15 @@ public class CheckoutServiceImp implements CheckoutService {
 
     @Override
     @Transactional
-    public String iniciarCheckout(UUID usuarioId) {
+    public CheckoutResponseDto iniciarCheckout(UUID usuarioId) {
         Duration vigencia = Duration.parse(vigenciaOrden);
         if (vigencia.isZero() || vigencia.isNegative()) {
             throw new IllegalStateException("La vigencia de la orden debe ser positiva");
         }
-        Carrito carrito= carritoRepository.findByUsuarioIdAndEstadoCarrito(usuarioId, EstadoCarrito.ACTIVO).orElseThrow(()-> new RecursoNoEncontradoException("El Carrito no fue encontrado o no esta activo"));
+        // El bloqueo dura hasta el commit/rollback: otro checkout del mismo
+        // carrito espera y vuelve a evaluar si sigue ACTIVO después del primero.
+        Carrito carrito = carritoRepository.buscarActivoParaCheckout(usuarioId, EstadoCarrito.ACTIVO)
+                .orElseThrow(() -> new RecursoNoEncontradoException("El Carrito no fue encontrado o no esta activo"));
         if(carrito.getItems().isEmpty()){
             throw new ReglaNegocioException("No se puede iniciar una compra con un carrito vacío");
         }
@@ -97,7 +103,33 @@ public class CheckoutServiceImp implements CheckoutService {
 
         // El ID generado identifica esta compra en la preferencia y en el webhook.
         ordenRepository.save(orden);
+
+        // El intento local existe antes de solicitar la preferencia, pero todavía
+        // no tiene ID de pago externo: ese ID se conoce cuando hay un cobro real.
+        Pago pago = new Pago();
+        pago.setOrden(orden);
+        pago.setEstado(EstadoPago.PENDIENTE);
+        pago.setMonto(orden.getTotal());
+        pago.setMoneda(orden.getMoneda());
+        pago.setCreadoEn(momentoActual);
+        pago.setActualizadoEn(momentoActual);
+        pagoRepository.saveAndFlush(pago);
+
         // El adapter obtiene el enlace; crear la preferencia no aprueba la orden.
-        return pasarelaPago.crearUrlPago(orden);
+        // No capturamos el fallo: al propagarse, @Transactional revierte orden,
+        // ítems y pago locales, incluso si ya se enviaron los INSERT a la base.
+        PreferenciaPago preferencia = pasarelaPago.crearPreferencia(orden);
+        pago.setPreferenciaId(preferencia.preferenciaId());
+        pago.setUrlPago(preferencia.urlPago());
+        pago.setActualizadoEn(Instant.now());
+        pagoRepository.save(pago);
+
+        // Decisión: conservamos los ítems y consumimos el carrito como ORDENADO.
+        // Significa que originó una orden, no que esté pagada. Un segundo clic
+        // ya no puede reutilizarlo; si falla esta transacción, sigue ACTIVO.
+        carrito.setEstadoCarrito(EstadoCarrito.ORDENADO);
+        carrito.setActualizadoEn(Instant.now());
+        carritoRepository.save(carrito);
+        return new CheckoutResponseDto(orden.getId(), preferencia.urlPago());
     }
 }

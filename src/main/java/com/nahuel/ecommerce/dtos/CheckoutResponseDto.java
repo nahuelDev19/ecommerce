@@ -1,4 +1,6 @@
 package com.nahuel.ecommerce.dtos;
 
-public class CheckoutResponseDto {
+import java.util.UUID;
+
+public record CheckoutResponseDto(UUID ordenId, String urlPago) {
 }

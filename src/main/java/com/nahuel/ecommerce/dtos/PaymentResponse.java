@@ -17,6 +17,17 @@ public class PaymentResponse {
 
     private Long id;
 
+    @JsonProperty("order")
+    private OrdenComercial ordenComercial;
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class OrdenComercial {
+        private Long id;
+    }
+
     @JsonProperty("date_approved")
     private OffsetDateTime fechaAprobacion;
 

@@ -1,6 +1,7 @@
 package com.nahuel.ecommerce.controllers;
 
 import com.nahuel.ecommerce.checkout.CheckoutService;
+import com.nahuel.ecommerce.dtos.CheckoutResponseDto;
 import com.nahuel.ecommerce.entitys.EstadoOrden;
 import com.nahuel.ecommerce.entitys.Usuario;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +19,7 @@ public class CheckoutController {
     private final CheckoutService checkoutService;
 
     @PostMapping
-    public ResponseEntity<String> iniciarCheckout(@AuthenticationPrincipal Usuario usuario) {
+    public ResponseEntity<CheckoutResponseDto> iniciarCheckout(@AuthenticationPrincipal Usuario usuario) {
         return ResponseEntity.ok(checkoutService.iniciarCheckout(usuario.getId()));
     }
 

@@ -15,4 +15,8 @@ public class PreferenciaMercadoPagoResponse {
     // La preferencia habilita el checkout; esta URL todavía no acredita un pago.
     @JsonProperty("init_point")
     private String urlPago;
+    // Identifica la preferencia, no un pago aprobado.
+    @JsonProperty("id")
+    private String preferenciaId;
+
 }

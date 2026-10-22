@@ -1,5 +1,7 @@
 package com.nahuel.ecommerce.integracion;
 
+import com.nahuel.ecommerce.checkout.CheckoutService;
+import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
 import com.nahuel.ecommerce.entitys.*;
 import com.nahuel.ecommerce.repositories.*;
 import com.nahuel.ecommerce.support.JwtTestHelper;
@@ -24,6 +26,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.math.BigDecimal;
 import javax.crypto.Mac;
@@ -34,13 +37,18 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import java.util.HexFormat;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.client.ExpectedCount.once;
-import static org.springframework.test.web.client.ExpectedCount.times;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -80,6 +88,8 @@ class CheckoutIntegracionTest extends TestDeIntegracion {
     @Autowired private ProductoRepository productos;
     @Autowired private CarritoRepository carritos;
     @Autowired private OrdenRepository ordenes;
+    @Autowired private PagoRepository pagos;
+    @Autowired private CheckoutService checkoutService;
     @Autowired private MockRestServiceServer mercadoPago;
 
     private final JwtTestHelper jwt = new JwtTestHelper();
@@ -120,18 +130,25 @@ class CheckoutIntegracionTest extends TestDeIntegracion {
                 .andExpect(header("Authorization", "Bearer token-falso-exclusivo-checkout-test"))
                 .andExpect(jsonPath("$.items[0].unit_price").value(960.0))
                 .andExpect(jsonPath("$.items[0].currency_id").value("ARS"))
-                .andRespond(withSuccess("{\"init_point\":\"" + URL_PAGO + "\"}",
+                // La respuesta simulada ahora incluye los dos datos de la preferencia.
+                .andRespond(withSuccess("{\"id\":\"preferencia-test-001\",\"init_point\":\"" + URL_PAGO + "\"}",
                         MediaType.APPLICATION_JSON));
 
         // EJECUCIÓN: JWT real de prueba, sin desactivar filtros ni reemplazar principal.
-        mockMvc.perform(post("/api/checkout").with(jwt.bearerToken(comprador)))
+        var respuestaCheckout = mockMvc.perform(post("/api/checkout").with(jwt.bearerToken(comprador)))
                 .andExpect(status().isOk())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
-                        .content().string(URL_PAGO));
+                        .content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .jsonPath("$.urlPago").value(URL_PAGO))
+                .andReturn();
 
         // VERIFICACIÓN: leemos lo persistido, no el objeto armado por el test.
         assertThat(cantidad("orden")).isEqualTo(1);
         Orden orden = ordenes.findAll().get(0);
+        assertThat(com.jayway.jsonpath.JsonPath.<String>read(
+                respuestaCheckout.getResponse().getContentAsString(), "$.ordenId"))
+                .isEqualTo(orden.getId().toString());
         assertThat(orden.getEstado()).isEqualTo(EstadoOrden.PENDIENTE_PAGO);
         assertThat(orden.getUsuario().getId()).isEqualTo(comprador.getId());
         assertThat(orden.getSubtotal()).isEqualByComparingTo("960.00");
@@ -140,11 +157,123 @@ class CheckoutIntegracionTest extends TestDeIntegracion {
         assertThat(orden.getMoneda()).isEqualTo(TipoMoneda.ARG);
         assertThat(Duration.between(orden.getCreadoEn(), orden.getVenceEn()))
                 .isEqualTo(Duration.ofHours(2));
+        // El enlace no acredita un cobro: se guarda un único intento pendiente
+        // con la preferencia y la URL, sin inventar un ID de pago externo.
+        assertThat(cantidad("pago")).isEqualTo(1);
+        var intentos = pagos.findByOrdenId(orden.getId());
+        assertThat(intentos).hasSize(1);
+        Pago pago = intentos.get(0);
+        assertThat(pago.getEstado()).isEqualTo(EstadoPago.PENDIENTE);
+        assertThat(pago.getMonto()).isEqualByComparingTo(orden.getTotal());
+        assertThat(pago.getMoneda()).isEqualTo(orden.getMoneda());
+        assertThat(pago.getPreferenciaId()).isEqualTo("preferencia-test-001");
+        assertThat(pago.getUrlPago()).isEqualTo(URL_PAGO);
+        assertThat(pago.getPagoExternoId()).isNull();
+        assertThat(pago.getCreadoEn()).isEqualTo(orden.getCreadoEn());
+        assertThat(pago.getActualizadoEn()).isAfterOrEqualTo(pago.getCreadoEn());
         verificarItemsCopiados(orden.getId(), carrito);
+
+        Carrito consumido = carritos.findById(carrito.getId()).orElseThrow();
+        assertThat(consumido.getEstadoCarrito()).isEqualTo(EstadoCarrito.ORDENADO);
+        assertThat(consumido.getActualizadoEn()).isAfterOrEqualTo(consumido.getCreadoEn());
+        assertThat(cantidad("item_carrito")).isEqualTo(3);
+
+        // Otro clic no crea otra orden ni solicita una segunda preferencia.
+        mockMvc.perform(post("/api/checkout").with(jwt.bearerToken(comprador)))
+                .andExpect(status().isNotFound());
+        assertThat(cantidad("orden")).isEqualTo(1);
+        assertThat(cantidad("pago")).isEqualTo(1);
 
         // Cambiar luego el catálogo no debe alterar las compras ya registradas.
         jdbc.update("UPDATE productos SET precio_base = 9999, nombre = nombre || '-nuevo'");
         verificarItemsCopiados(orden.getId(), carrito);
+    }
+
+    @Test
+    @DisplayName("Fallo de pasarela revierte la orden, sus ítems y el pago pendiente")
+    void falloDePasarelaNoDejaCompraParcial() {
+        Carrito carrito = carritoActivo();
+        agregarItem(carrito, "Producto rollback", "100.00", "100.00", 1, Instant.now());
+        carritos.saveAndFlush(carrito);
+        mercadoPago.expect(once(), requestTo(API + "/checkout/preferences"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withServerError());
+
+        // Se llama al bean de Spring: atraviesa el proxy transaccional real.
+        // Sin @Transactional en el test, el rollback lo debe hacer el servicio.
+        assertThatThrownBy(() -> checkoutService.iniciarCheckout(comprador.getId()))
+                .isInstanceOf(RestClientResponseException.class);
+
+        assertThat(cantidad("orden")).isZero();
+        assertThat(cantidad("item_orden")).isZero();
+        assertThat(cantidad("pago")).isZero();
+        assertThat(carritos.findById(carrito.getId()).orElseThrow().getEstadoCarrito())
+                .isEqualTo(EstadoCarrito.ACTIVO);
+        assertThat(cantidad("item_carrito")).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Dos checkouts simultáneos del mismo carrito crean una sola compra")
+    void checkoutsSimultaneosNoDuplicanLaCompra() throws Exception {
+        Carrito carrito = carritoActivo();
+        agregarItem(carrito, "Producto concurrente", "100.00", "100.00", 1, Instant.now());
+        carritos.saveAndFlush(carrito);
+        UUID usuarioId = comprador.getId();
+        CountDownLatch primeraEnPasarela = new CountDownLatch(1);
+        CountDownLatch liberarPasarela = new CountDownLatch(1);
+        mercadoPago.expect(once(), requestTo(API + "/checkout/preferences"))
+                .andRespond(request -> {
+                    primeraEnPasarela.countDown();
+                    try {
+                        if (!liberarPasarela.await(20, TimeUnit.SECONDS)) {
+                            throw new java.io.IOException("No se liberó la pasarela simulada");
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new java.io.IOException(e);
+                    }
+                    return withSuccess("{\"id\":\"preferencia-concurrente\",\"init_point\":\""
+                            + URL_PAGO + "\"}", MediaType.APPLICATION_JSON).createResponse(request);
+                });
+
+        var ejecutor = Executors.newFixedThreadPool(2);
+        try {
+            var primero = ejecutor.submit(() -> checkoutService.iniciarCheckout(usuarioId));
+            assertThat(primeraEnPasarela.await(15, TimeUnit.SECONDS)).isTrue();
+            var segundo = ejecutor.submit(() -> {
+                try {
+                    checkoutService.iniciarCheckout(usuarioId);
+                    return "CREADO";
+                } catch (RecursoNoEncontradoException e) {
+                    return "SIN_CARRITO_ACTIVO";
+                }
+            });
+
+            // No basta lanzar dos hilos: comprobamos que PostgreSQL realmente
+            // tiene el segundo checkout esperando un bloqueo sobre carrito.
+            await().atMost(Duration.ofSeconds(10)).untilAsserted(() ->
+                    assertThat(jdbc.queryForObject("""
+                            SELECT count(*) FROM pg_stat_activity
+                            WHERE datname = current_database()
+                              AND wait_event_type = 'Lock'
+                              AND query ILIKE '%carrito%'
+                            """, Long.class)).isGreaterThan(0));
+            liberarPasarela.countDown();
+            var creado = primero.get(15, TimeUnit.SECONDS);
+            assertThat(creado.urlPago()).isEqualTo(URL_PAGO);
+            assertThat(ordenes.findById(creado.ordenId())).isPresent();
+            assertThat(segundo.get(15, TimeUnit.SECONDS)).isEqualTo("SIN_CARRITO_ACTIVO");
+        } finally {
+            liberarPasarela.countDown();
+            ejecutor.shutdownNow();
+            assertThat(ejecutor.awaitTermination(15, TimeUnit.SECONDS)).isTrue();
+        }
+
+        assertThat(cantidad("orden")).isEqualTo(1);
+        assertThat(cantidad("pago")).isEqualTo(1);
+        assertThat(cantidad("item_orden")).isEqualTo(1);
+        assertThat(carritos.findById(carrito.getId()).orElseThrow().getEstadoCarrito())
+                .isEqualTo(EstadoCarrito.ORDENADO);
     }
 
     @Test
@@ -169,9 +298,10 @@ class CheckoutIntegracionTest extends TestDeIntegracion {
     @Test
     @DisplayName("24.3 - Webhook firmado de pago aprobado registra Pago y marca la orden PAGADA")
     void pagoAprobadoActualizaOrden() throws Exception {
-        // PREPARACIÓN: orden pendiente ya persistida y dos consultas HTTP simuladas.
-        // El servicio consulta una vez para identificar la orden y otra después de bloquearla.
+        // Conservamos el caso existente y lo adaptamos al pago que crea checkout.
+        // Cada consulta ahora obtiene el pago y su orden comercial.
         Orden orden = ordenPendiente();
+        Pago pendiente = guardarPagoPendiente(orden);
         esperarPagoAprobado(orden, 2);
 
         // EJECUCIÓN: Mercado Pago no envía JWT; sí enviamos una firma HMAC válida.
@@ -179,6 +309,8 @@ class CheckoutIntegracionTest extends TestDeIntegracion {
 
         // VERIFICACIÓN: el 200 no es suficiente; comprobamos ambos commits en PostgreSQL.
         verificarPagoAprobado(orden);
+        assertThat(pagos.findByPagoExternoId(ID_PAGO).orElseThrow().getId())
+                .isEqualTo(pendiente.getId());
         assertThat(cantidad("orden")).isEqualTo(1);
         assertThat(cantidad("item_orden")).isEqualTo(1);
     }
@@ -188,6 +320,7 @@ class CheckoutIntegracionTest extends TestDeIntegracion {
     void webhookRepetidoNoDuplicaEfectos() throws Exception {
         // PREPARACIÓN: mismo pago y respuesta de la API para los dos avisos.
         Orden orden = ordenPendiente();
+        Pago pendiente = guardarPagoPendiente(orden);
         esperarPagoAprobado(orden, 4);
 
         // EJECUCIÓN 1: registramos las identidades y fechas ya confirmadas.
@@ -195,6 +328,7 @@ class CheckoutIntegracionTest extends TestDeIntegracion {
         verificarPagoAprobado(orden);
         Orden primera = ordenes.findById(orden.getId()).orElseThrow();
         UUID idPago = jdbc.queryForObject("SELECT id FROM pago", UUID.class);
+        assertThat(idPago).isEqualTo(pendiente.getId());
         var itemsOriginales = jdbc.queryForList("SELECT * FROM item_orden ORDER BY id");
 
         // EJECUCIÓN 2: mismo cuerpo, data.id, request-id, timestamp y firma.
@@ -259,10 +393,24 @@ class CheckoutIntegracionTest extends TestDeIntegracion {
         return ordenes.saveAndFlush(orden);
     }
 
+    private Pago guardarPagoPendiente(Orden orden) {
+        Pago pago = new Pago();
+        pago.setOrden(orden);
+        pago.setEstado(EstadoPago.PENDIENTE);
+        pago.setMonto(orden.getTotal());
+        pago.setMoneda(orden.getMoneda());
+        pago.setPreferenciaId("preferencia-test-001");
+        pago.setUrlPago(URL_PAGO);
+        pago.setCreadoEn(orden.getCreadoEn());
+        pago.setActualizadoEn(orden.getCreadoEn());
+        return pagos.saveAndFlush(pago);
+    }
+
     private void esperarPagoAprobado(Orden orden, int consultas) {
         String respuesta = """
                 {
                   "id": %s,
+                  "order": {"id": 123456},
                   "status": "approved",
                   "external_reference": "%s",
                   "transaction_amount": 200.00,
@@ -270,10 +418,19 @@ class CheckoutIntegracionTest extends TestDeIntegracion {
                   "date_approved": "%s"
                 }
                 """.formatted(ID_PAGO, orden.getId(), FECHA_APROBACION);
-        mercadoPago.expect(times(consultas), requestTo(API + "/v1/payments/" + ID_PAGO))
-                .andExpect(method(HttpMethod.GET))
-                .andExpect(header("Authorization", "Bearer token-falso-exclusivo-checkout-test"))
-                .andRespond(withSuccess(respuesta, MediaType.APPLICATION_JSON));
+        String ordenComercial = """
+                {"id":123456,"preference_id":"preferencia-test-001","external_reference":"%s"}
+                """.formatted(orden.getId());
+        for (int i = 0; i < consultas; i++) {
+            mercadoPago.expect(once(), requestTo(API + "/v1/payments/" + ID_PAGO))
+                    .andExpect(method(HttpMethod.GET))
+                    .andExpect(header("Authorization", "Bearer token-falso-exclusivo-checkout-test"))
+                    .andRespond(withSuccess(respuesta, MediaType.APPLICATION_JSON));
+            mercadoPago.expect(once(), requestTo(API + "/merchant_orders/123456"))
+                    .andExpect(method(HttpMethod.GET))
+                    .andExpect(header("Authorization", "Bearer token-falso-exclusivo-checkout-test"))
+                    .andRespond(withSuccess(ordenComercial, MediaType.APPLICATION_JSON));
+        }
     }
 
     private void enviarWebhookFirmado(String requestId) throws Exception {
@@ -304,6 +461,8 @@ class CheckoutIntegracionTest extends TestDeIntegracion {
         assertThat(pago.get("estado")).isEqualTo("APROBADO");
         assertThat((BigDecimal) pago.get("monto")).isEqualByComparingTo("200.00");
         assertThat(pago.get("moneda")).isEqualTo("ARG");
+        assertThat(pago.get("preferencia_id")).isEqualTo("preferencia-test-001");
+        assertThat(pago.get("url_pago")).isEqualTo(URL_PAGO);
     }
 
     private Usuario guardarUsuario(Usuario usuario) {

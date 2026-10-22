@@ -4,6 +4,8 @@ import com.nahuel.ecommerce.entitys.Carrito;
 import com.nahuel.ecommerce.entitys.EstadoCarrito;
 import com.nahuel.ecommerce.entitys.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -16,6 +18,12 @@ import java.util.UUID;
 public interface CarritoRepository extends JpaRepository<Carrito, UUID> {
 
     Optional<Carrito> findByUsuarioIdAndEstadoCarrito(UUID usuarioId, EstadoCarrito estado);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select c from Carrito c where c.usuario.id = :usuarioId and c.estadoCarrito = :estado")
+    Optional<Carrito> buscarActivoParaCheckout(
+            @Param("usuarioId") UUID usuarioId,
+            @Param("estado") EstadoCarrito estado);
 
     List<Carrito> findByUsuarioId(UUID usuarioId);
 

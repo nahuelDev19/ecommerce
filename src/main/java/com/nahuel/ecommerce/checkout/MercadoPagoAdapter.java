@@ -1,7 +1,10 @@
 package com.nahuel.ecommerce.checkout;
 
+import com.nahuel.ecommerce.dtos.PaymentResponse;
+import com.nahuel.ecommerce.dtos.OrdenComercialMercadoPagoResponse;
 import com.nahuel.ecommerce.dtos.PreferenciaMercadoPagoResponse;
 import com.nahuel.ecommerce.entitys.EstadoOrden;
+import com.nahuel.ecommerce.entitys.EstadoPago;
 import com.nahuel.ecommerce.entitys.Orden;
 import com.nahuel.ecommerce.exceptions.ReglaNegocioException;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +35,7 @@ public class MercadoPagoAdapter implements PasarelaPago {
     private String notificationURL;
 
     @Override
-    public String crearUrlPago(Orden orden) {
+    public PreferenciaPago crearPreferencia(Orden orden) {
         if (orden == null || orden.getId() == null) {
             throw new IllegalStateException(
                     "La orden debe tener un identificador antes de solicitar el pago"
@@ -104,10 +107,95 @@ public class MercadoPagoAdapter implements PasarelaPago {
                 .retrieve()
                 .body(PreferenciaMercadoPagoResponse.class);
 
-        if (respuesta == null || respuesta.getUrlPago() == null
+        if (respuesta == null
+                || respuesta.getPreferenciaId() == null
+                || respuesta.getPreferenciaId().isBlank()
+                || respuesta.getUrlPago() == null
                 || respuesta.getUrlPago().isBlank()) {
-            throw new IllegalStateException("Mercado Pago no devolvió una URL de pago");
+            throw new IllegalStateException(
+                    "Mercado Pago no devolvió el ID de preferencia o la URL de pago"
+            );
         }
-        return respuesta.getUrlPago();
+
+        // Entregamos datos neutrales: el servicio no necesita conocer el JSON externo.
+        return new PreferenciaPago(
+                respuesta.getPreferenciaId(),
+                respuesta.getUrlPago()
+        );
+    }
+
+    @Override
+    public PagoConsultado consultarPago(String pagoExternoId) {
+        // Consultamos el pago real; no tomamos su estado del cuerpo del aviso.
+        PaymentResponse respuesta = restClientBuilder.build()
+                .get()
+                .uri(apiURL + "/v1/payments/{id}", pagoExternoId)
+                .headers(headers -> headers.setBearerAuth(accessToken))
+                .retrieve()
+                .body(PaymentResponse.class);
+
+        if (respuesta == null) {
+            throw new IllegalStateException(
+                    "Mercado Pago devolvió una respuesta sin datos del pago"
+            );
+        }
+
+        if (respuesta.getId() == null || !respuesta.getId().toString().equals(pagoExternoId)) {
+            throw new IllegalStateException("La respuesta no corresponde al pago consultado");
+        }
+        // En Checkout Pro el vínculo es pago -> orden comercial -> preferencia.
+        // Consultamos la API autenticada: no inferimos la preferencia por el orden
+        // de llegada de los avisos ni usamos parámetros enviados por el comprador.
+        if (respuesta.getOrdenComercial() == null || respuesta.getOrdenComercial().getId() == null) {
+            throw new IllegalStateException("El pago no tiene una orden comercial asociada");
+        }
+        Long ordenComercialId = respuesta.getOrdenComercial().getId();
+        OrdenComercialMercadoPagoResponse ordenComercial = restClientBuilder.build()
+                .get()
+                .uri(apiURL + "/merchant_orders/{id}", ordenComercialId)
+                .headers(headers -> headers.setBearerAuth(accessToken))
+                .retrieve()
+                .body(OrdenComercialMercadoPagoResponse.class);
+        if (ordenComercial == null || !ordenComercialId.equals(ordenComercial.getId())
+                || ordenComercial.getPreferenciaId() == null
+                || ordenComercial.getPreferenciaId().isBlank()) {
+            throw new IllegalStateException("La orden comercial no identifica una preferencia válida");
+        }
+        if (respuesta.getReferenciaExterna() == null
+                || !respuesta.getReferenciaExterna().equalsIgnoreCase(ordenComercial.getReferenciaExterna())) {
+            throw new ReglaNegocioException("El pago y la orden comercial tienen referencias diferentes");
+        }
+
+        // El webhook recibe nuestro enum, un ID textual y una fecha Instant.
+        return new PagoConsultado(
+                respuesta.getId() == null ? null : respuesta.getId().toString(),
+                traducirEstado(respuesta.getEstado()),
+                respuesta.getMonto(),
+                respuesta.getMoneda(),
+                respuesta.getReferenciaExterna(),
+                respuesta.getFechaAprobacion() == null
+                        ? null
+                        : respuesta.getFechaAprobacion().toInstant(),
+                ordenComercial.getPreferenciaId()
+        );
+    }
+
+    private EstadoPago traducirEstado(String estadoExterno) {
+        if (estadoExterno == null) {
+            throw new IllegalStateException(
+                    "Mercado Pago no informó el estado del pago"
+            );
+        }
+
+        return switch (estadoExterno) {
+            case "pending" -> EstadoPago.PENDIENTE;
+            case "in_process" -> EstadoPago.EN_PROCESO;
+            case "approved" -> EstadoPago.APROBADO;
+            case "rejected" -> EstadoPago.RECHAZADO;
+            case "cancelled" -> EstadoPago.CANCELADO;
+            default -> throw new ReglaNegocioException(
+                    "Estado de pago no contemplado: " + estadoExterno
+            );
+        };
     }
 }
