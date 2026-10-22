@@ -6,12 +6,9 @@ import com.nahuel.ecommerce.dtos.ResultadoImportacionDto;
 import com.nahuel.ecommerce.entitys.Producto;
 import com.nahuel.ecommerce.exceptions.ArchivoConErroresException;
 import com.nahuel.ecommerce.repositories.ProductoRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -39,7 +36,6 @@ public class ProcesarArchivosService {
 
 
         ValidacionImportacion v= validarArchivo(file);
-        //ResultadoImportacionDto resultado= confirmar(v);
 
         return soloValidacion ? validarSinGuardar(v) : confirmar(v);
     }

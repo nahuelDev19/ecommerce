@@ -49,10 +49,13 @@ public class ImportacionAsyncService {
             job.setCantidadFilas(reporte.getLineasProcesadas());
             job.setFilasConError(cantidadDeFilasConError(reporte));
             job.setDetalleErrores(serializarErrores(reporte.getErrores()));
-        }catch (Exception e){
-            //aqui se rompe
+        }catch (Exception | Error e){
             job.setEstado(EstadoImportacion.FALLIDOS);
-            job.setMensajeError(e.getMessage());
+            String mensaje= e.getMessage();
+            if(mensaje!=null && mensaje.length()>255){
+               mensaje = mensaje.substring(0,255);
+            }
+            job.setMensajeError(mensaje);
         }
             finally {
         job.setFechaFinalizacion(LocalDateTime.now());

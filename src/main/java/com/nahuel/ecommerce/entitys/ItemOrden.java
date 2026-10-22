@@ -29,6 +29,7 @@ public class ItemOrden {
     @Column(nullable = false, updatable = false)
     private String nombreProducto;
 
+    @Column(nullable = false,updatable = false)
     private BigDecimal precioUnitario;
 
     private Integer cantidad;

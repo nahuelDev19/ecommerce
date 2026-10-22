@@ -20,7 +20,6 @@ public class GuardadoPorLotesService {
     @PersistenceContext
     private EntityManager entityManager;
 
-    // REEMPLAZA a ProcesarArchivosService.guardarLote
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void guardarLote(List<Producto> chunk) {
         productoRepository.saveAll(chunk);
