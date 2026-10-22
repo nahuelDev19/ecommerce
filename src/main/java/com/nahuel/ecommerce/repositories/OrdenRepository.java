@@ -10,12 +10,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+import java.util.List;
 import java.time.Instant;
 import java.util.UUID;
 
 public interface OrdenRepository extends JpaRepository<Orden, UUID> {
 
     Optional<Orden> findByIdAndUsuarioId(UUID id, UUID usuarioId);
+
+    List<Orden> findByUsuarioIdOrderByCreadoEnDesc(UUID usuarioId);
 
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

@@ -2,6 +2,7 @@ package com.nahuel.ecommerce.controllers;
 
 import com.nahuel.ecommerce.checkout.CheckoutService;
 import com.nahuel.ecommerce.dtos.CheckoutResponseDto;
+import com.nahuel.ecommerce.dtos.OrdenDto;
 import com.nahuel.ecommerce.entitys.EstadoOrden;
 import com.nahuel.ecommerce.entitys.Usuario;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
+import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
@@ -21,6 +23,19 @@ public class CheckoutController {
     @PostMapping
     public ResponseEntity<CheckoutResponseDto> iniciarCheckout(@AuthenticationPrincipal Usuario usuario) {
         return ResponseEntity.ok(checkoutService.iniciarCheckout(usuario.getId()));
+    }
+
+    @GetMapping("/ordenes/{ordenId}")
+    public ResponseEntity<OrdenDto> consultarOrden(
+            @PathVariable UUID ordenId,
+            @AuthenticationPrincipal Usuario usuario) {
+        return ResponseEntity.ok(checkoutService.consultarOrden(ordenId, usuario.getId()));
+    }
+
+    @GetMapping("/ordenes")
+    public ResponseEntity<List<OrdenDto>> listarOrdenes(
+            @AuthenticationPrincipal Usuario usuario) {
+        return ResponseEntity.ok(checkoutService.listarOrdenes(usuario.getId()));
     }
 
     @GetMapping("/ordenes/{ordenId}/estado")

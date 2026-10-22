@@ -2,12 +2,14 @@ package com.nahuel.ecommerce.checkout;
 
 import com.nahuel.ecommerce.entitys.*;
 import com.nahuel.ecommerce.dtos.CheckoutResponseDto;
+import com.nahuel.ecommerce.dtos.OrdenDto;
 import com.nahuel.ecommerce.exceptions.RecursoNoEncontradoException;
 import com.nahuel.ecommerce.exceptions.ReglaNegocioException;
 import com.nahuel.ecommerce.repositories.CarritoRepository;
 import com.nahuel.ecommerce.repositories.OrdenRepository;
 import com.nahuel.ecommerce.repositories.PagoRepository;
 import com.nahuel.ecommerce.services.CalculadoraCarrito;
+import com.nahuel.ecommerce.mappers.OrdenMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -27,6 +30,7 @@ public class CheckoutServiceImp implements CheckoutService {
     private final OrdenRepository ordenRepository;
     private final PagoRepository pagoRepository;
     private final PasarelaPago pasarelaPago;
+    private final OrdenMapper ordenMapper;
 
     @Value("${checkout.vigencia-orden}")
     private String vigenciaOrden;
@@ -40,6 +44,20 @@ public class CheckoutServiceImp implements CheckoutService {
     }
 
 
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrdenDto consultarOrden(UUID ordenId, UUID usuarioId) {
+        Orden orden = ordenRepository.findByIdAndUsuarioId(ordenId, usuarioId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Orden no encontrada"));
+        return ordenMapper.toDto(orden);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrdenDto> listarOrdenes(UUID usuarioId) {
+        return ordenMapper.toDto(ordenRepository.findByUsuarioIdOrderByCreadoEnDesc(usuarioId));
+    }
 
     @Override
     @Transactional
