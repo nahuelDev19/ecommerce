@@ -20,6 +20,8 @@ public interface OrdenRepository extends JpaRepository<Orden, UUID> {
 
     List<Orden> findByUsuarioIdOrderByCreadoEnDesc(UUID usuarioId);
 
+    List<Orden> findByEstadoAndVenceEnLessThanEqual(EstadoOrden estado, Instant limite);
+
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select o from Orden o where o.id = :id")

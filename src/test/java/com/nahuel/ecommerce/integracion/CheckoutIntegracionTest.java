@@ -328,6 +328,7 @@ class CheckoutIntegracionTest extends TestDeIntegracion {
         verificarPagoAprobado(orden);
         Orden primera = ordenes.findById(orden.getId()).orElseThrow();
         UUID idPago = jdbc.queryForObject("SELECT id FROM pago", UUID.class);
+        var pagoOriginal = jdbc.queryForMap("SELECT * FROM pago WHERE id = ?", idPago);
         assertThat(idPago).isEqualTo(pendiente.getId());
         var itemsOriginales = jdbc.queryForList("SELECT * FROM item_orden ORDER BY id");
 
@@ -339,6 +340,7 @@ class CheckoutIntegracionTest extends TestDeIntegracion {
         assertThat(cantidad("orden")).isEqualTo(1);
         assertThat(cantidad("item_orden")).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT id FROM pago", UUID.class)).isEqualTo(idPago);
+        assertThat(jdbc.queryForMap("SELECT * FROM pago WHERE id = ?", idPago)).isEqualTo(pagoOriginal);
         assertThat(jdbc.queryForList("SELECT * FROM item_orden ORDER BY id"))
                 .isEqualTo(itemsOriginales);
         Orden segunda = ordenes.findById(orden.getId()).orElseThrow();

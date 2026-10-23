@@ -10,6 +10,7 @@ import com.nahuel.ecommerce.exceptions.ReglaNegocioException;
 import com.nahuel.ecommerce.repositories.OrdenRepository;
 import com.nahuel.ecommerce.repositories.PagoRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,8 +23,10 @@ import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.UUID;
+import java.util.Objects;
 
 @RequiredArgsConstructor
+@Slf4j
 @Service
 public class WebhookService {
 
@@ -94,6 +97,12 @@ public class WebhookService {
         }
         //filtrar eventos
         if (!"payment".equalsIgnoreCase(type)) {
+            return;
+        }
+        // La firma siempre se valida primero: omitir el ID no evita el 401.
+        // Un aviso firmado sin ID no permite identificar el recurso a consultar.
+        if (dataId == null || dataId.isBlank()) {
+            log.warn("Webhook firmado sin data.id; no se consulta la pasarela. requestId={}", requestId);
             return;
         }
         // El cuerpo del aviso no acredita el pago: consultamos sus datos reales
@@ -173,14 +182,25 @@ public class WebhookService {
                     "La pasarela no informó el estado del pago"
             );
         }
-        // El adapter ya tradujo el estado externo a nuestro enum.
-        pago.setPagoExternoId(payment.pagoExternoId());
-        pago.setPreferenciaId(payment.preferenciaId());
-        pago.setMonto(payment.monto());
-        pago.setMoneda(orden.getMoneda());
-        pago.setEstado(payment.estado());
-        pago.setActualizadoEn(Instant.now());
-        pagoRepository.save(pago);
+        boolean cambioPago = pago.getId() == null
+                || !Objects.equals(pago.getPagoExternoId(), payment.pagoExternoId())
+                || !Objects.equals(pago.getPreferenciaId(), payment.preferenciaId())
+                || pago.getMonto() == null || pago.getMonto().compareTo(payment.monto()) != 0
+                || pago.getMoneda() != orden.getMoneda()
+                || pago.getEstado() != payment.estado();
+        // Un aviso idéntico no modifica ni siquiera actualizadoEn. Un cambio
+        // real de estado del mismo pago sí debe persistirse.
+        if (cambioPago) {
+            pago.setPagoExternoId(payment.pagoExternoId());
+            pago.setPreferenciaId(payment.preferenciaId());
+            pago.setMonto(payment.monto());
+            pago.setMoneda(orden.getMoneda());
+            pago.setEstado(payment.estado());
+            pago.setActualizadoEn(Instant.now());
+            // La violación de UNIQUE se propaga hasta fuera de esta transacción:
+            // no consultamos ni reintentamos con una sesión que ya falló.
+            pagoRepository.saveAndFlush(pago);
+        }
         //evitar reprocesar una orden pagada
         if (orden.getEstado() == EstadoOrden.PAGADA) {
             return;
@@ -237,6 +257,36 @@ public class WebhookService {
                     "El pago aprobado no tiene identificador o fecha de aprobación"
             );
         }
+
+        /*
+         * PENDIENTE DE CONSULTA CON EL PROFESOR: política de pagos tardíos (5.4).
+         * Propuesta desactivada por decisión del alumno: conservar una orden
+         * CANCELADA con un Pago APROBADO exige una forma de atención comercial.
+         * Un log no notifica al comercio ni permite seguir la resolución del caso.
+         * Falta decidir si se acepta la compra, se gestiona una incidencia o se
+         * reembolsa; no se implementaron panel, notificaciones ni devoluciones.
+         * Se conserva el código para discutirlo, sin dar este requisito por resuelto.
+         * Mientras está comentado, rige el comportamiento anterior: un pago
+         * aprobado puede pasar una orden CANCELADA a PAGADA, sin comparar plazos.
+         *
+        if (orden.getEstado() == EstadoOrden.CANCELADA) {
+            // Política para cancelación por vencimiento: importa cuándo se aprobó
+            // el cobro, no cuándo llegó el aviso. Solo reabrimos si se pagó ANTES
+            // de venceEn; el instante exacto del vencimiento ya queda fuera de plazo.
+            // El Pago APROBADO ya se guardó: conservar CANCELADA no devuelve dinero.
+            if (orden.getVenceEn() == null) {
+                log.warn("Pago aprobado para orden cancelada sin vencimiento; requiere revisión manual. "
+                                + "ordenId={}, pagoExternoId={}", orden.getId(), payment.pagoExternoId());
+                return;
+            }
+            if (!payment.fechaAprobacion().isBefore(orden.getVenceEn())) {
+                log.warn("Pago aprobado fuera de plazo para orden cancelada; requiere revisión manual. "
+                                + "ordenId={}, pagoExternoId={}, aprobadoEn={}, venceEn={}",
+                        orden.getId(), payment.pagoExternoId(), payment.fechaAprobacion(), orden.getVenceEn());
+                return;
+            }
+        }
+         */
 
         orden.setEstado(EstadoOrden.PAGADA);
         orden.setPaymentId(payment.pagoExternoId());

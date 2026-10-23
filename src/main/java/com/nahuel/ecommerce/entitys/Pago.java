@@ -13,6 +13,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(name = "uq_pago_externo_id", columnNames = "pago_externo_id"))
 public class Pago {
 
     @Id
@@ -33,6 +34,7 @@ public class Pago {
     private TipoMoneda moneda;
 
     private String preferenciaId;
+    @Column(name = "pago_externo_id")
     private String pagoExternoId;
 
     private String urlPago;
