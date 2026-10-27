@@ -24,6 +24,139 @@ Elegimos **RestClient**, disponible mediante `spring-boot-starter-restclient`. P
 
 El `pom.xml` configura Java 17. El Dockerfile actual compila y ejecuta con Java 21.
 
+## Probar la API desplegada en Render
+
+El backend está desplegado en Render y se puede probar desde **Postman**, utilizando esta URL base:
+
+```text
+https://ecommerce-aaiw.onrender.com
+```
+
+El servicio utiliza una instancia gratuita que se suspende después de un período de inactividad. Por eso, **la primera solicitud puede demorar varios minutos** mientras se reactiva e inicia la aplicación. Durante ese tiempo, esperar la respuesta antes de continuar.
+
+Una vez que la aplicación está activa, las siguientes solicitudes se procesan con normalidad. Si transcurre otro período de inactividad, el servicio puede volver a suspenderse y la siguiente solicitud tendrá nuevamente esa demora.
+
+La API no incluye una interfaz web de registro o inicio de sesión. Para seguir las pruebas de este apartado, usar Postman: abrir las direcciones directamente en el navegador no permite enviar los métodos, cuerpos JSON y tokens necesarios. No hace falta acceder a una cuenta de Render ni configurar un entorno local para probar la API publicada.
+
+### 1. Registrar un usuario
+
+Crear una solicitud con el método **POST**:
+
+```text
+https://ecommerce-aaiw.onrender.com/auth/register
+```
+
+En **Authorization**, seleccionar **No Auth**. En **Body → raw → JSON**, enviar:
+
+```json
+{
+  "email": "tu-correo@example.com",
+  "contrasena": "Prueba12345",
+  "nombreUsuario": "Usuario de prueba"
+}
+```
+
+Reemplazar los datos por los del usuario de prueba. La contraseña debe tener al menos ocho caracteres, una mayúscula, una minúscula y un número.
+
+Si el registro es exitoso, la respuesta devuelve un token para autenticar las siguientes solicitudes.
+
+### 2. Iniciar sesión
+
+Si el usuario ya está registrado, enviar **POST** a:
+
+```text
+https://ecommerce-aaiw.onrender.com/auth/login
+```
+
+Seleccionar **Authorization → No Auth** y enviar en **Body → raw → JSON**:
+
+```json
+{
+  "email": "tu-correo@example.com",
+  "contrasena": "Prueba12345"
+}
+```
+
+Conservar el token devuelto. En las siguientes solicitudes, seleccionar **Authorization → Bearer Token** y pegar únicamente el valor del token, sin agregar la palabra `Bearer`.
+
+Usar el token del mismo usuario durante toda la prueba del carrito y del checkout. Si vence, iniciar sesión nuevamente.
+
+### 3. Consultar productos
+
+Enviar **GET**, con el Bearer Token y sin cuerpo:
+
+```text
+https://ecommerce-aaiw.onrender.com/api/productos/filtrados
+```
+
+La respuesta contiene los productos paginados. Copiar el ID de un producto para agregarlo al carrito.
+
+### 4. Agregar un producto al carrito
+
+Enviar **POST**, con el Bearer Token:
+
+```text
+https://ecommerce-aaiw.onrender.com/api/carritos/agregar
+```
+
+En **Body → raw → JSON**, enviar:
+
+```json
+{
+  "productoId": "UUID del producto",
+  "cantidad": 1
+}
+```
+
+Reemplazar `UUID del producto` por un ID obtenido en la consulta anterior. Si el usuario no tiene un carrito activo, el servicio lo crea automáticamente.
+
+Para consultar el carrito activo, enviar **GET**, con el mismo token y sin cuerpo:
+
+```text
+https://ecommerce-aaiw.onrender.com/api/carritos/mi-carrito
+```
+
+### 5. Iniciar el checkout
+
+Con un carrito que contenga productos, enviar **POST**:
+
+```text
+https://ecommerce-aaiw.onrender.com/api/checkout
+```
+
+Usar el mismo Bearer Token y seleccionar **Body → none**. El servidor identifica al usuario mediante el token y calcula el total; no se envían el ID del carrito ni el importe.
+
+La respuesta incluye:
+
+```json
+{
+  "ordenId": "UUID de la orden",
+  "urlPago": "URL de pago de Mercado Pago"
+}
+```
+
+Conservar `ordenId` y abrir `urlPago` en el navegador para continuar en Mercado Pago. Abrir esa URL no significa que la orden esté pagada.
+
+Para completar el pago de prueba, seguir las indicaciones del apartado [Configuración y prueba manual con Mercado Pago](#configuración-y-prueba-manual-con-mercado-pago) y utilizar la cuenta compradora de prueba correspondiente.
+
+### 6. Consultar la orden
+
+Enviar **GET**, con el token del usuario que inició el checkout y sin cuerpo:
+
+```text
+https://ecommerce-aaiw.onrender.com/api/checkout/ordenes/{ordenId}
+```
+
+Reemplazar `{ordenId}` por el valor devuelto al iniciar el checkout.
+
+Cuando el pago sea aprobado y el webhook se procese correctamente, la orden debería figurar como `PAGADA`. La respuesta también permite consultar los ítems, los importes y las fechas.
+
+Para listar las órdenes del usuario, enviar **GET**, con el mismo token y sin cuerpo, a:
+
+```text
+https://ecommerce-aaiw.onrender.com/api/checkout/ordenes
+```
+
 ## Variables de entorno
 
 Configurar las variables en la ejecución de IntelliJ, en la terminal o en Render. Los valores de ejemplo son ficticios; no deben usarse como secretos reales. El proyecto no carga automáticamente archivos `.env`.
@@ -116,7 +249,7 @@ Las órdenes vencen a las dos horas. Un cron cada dos horas, en zona `America/Ar
 
 **Pendiente de consulta con el profesor:** la política comercial para pagos aprobados de órdenes ya canceladas. La propuesta está comentada y desactivada en `WebhookService`; actualmente un pago aprobado puede pasar una orden cancelada a pagada sin comparar el plazo. No hay gestión de incidencias, notificaciones comerciales ni devoluciones automáticas. Tampoco se implementaron pantallas de retorno.
 
-## Prueba manual con Mercado Pago
+## Configuración y prueba manual con Mercado Pago
 
 Se realizó una prueba previa en Render con cuentas de prueba: el checkout devolvió la URL, se pagó con saldo del comprador de prueba y el webhook dejó un pago `APROBADO` y la orden `PAGADA`, con importe y referencia coincidentes y fecha de aprobación guardada. Esa prueba corresponde al caso exitoso de la implementación de ese momento; debe repetirse después de las modificaciones posteriores.
 
